@@ -4,6 +4,7 @@
 
 # TODO : ACEPTAR COMO INPUT DEL USUARIO LOS ARCHIVOS PARA UTILIZAR
 # TODO : AÑADIR ZOOM
+# TODO : A LO MEJOR AÑADIR PARADAS SI SE PASA CERCA MIENTRAS SE ESTA EDITANDO
 
 import copy
 import math
@@ -19,8 +20,8 @@ ciudad = True
 ciudadesF = "Ciudades.json"
 rutasF = "Rutas.json"
 
-moviendo = []
-moviendoC = [-1] # Guarda la informacion de lo que hay que mover cuando se mueve una ciudad
+moviendo = [] # Vacio cuando no se mueve una ruta, cuando se mueve una ruta [ruta_conectada , pos_ocupaba_ciudad]
+moviendoC = [-1] # Guarda la informacion de lo que hay que mover cuando se mueve una ciudad [id_ciudad , [ruta_conectada , pos_ocupaba_ciudad], ...]
 
 finalciudades = [] # Guarda las clases Ciudad
 ciudades = [] # Guarda las ciudades que son dibujadas
@@ -186,9 +187,14 @@ def click(event):
 def editarCiudad(coords):
 	global finalciudades, ciudades, moviendoC
 	
-	for i in range(len(finalciudades)):
+	for i in range(len(finalciudades)): # Coger ciudad
 		if (distancia([finalciudades[i].x, finalciudades[i].y], coords) < 4):
 			moviendoC = [i]
+			
+			for r in range(len(finalrutas)):
+				for p in range(len(finalrutas[r].paradas)):
+					if (finalrutas[r].paradas[p] == finalciudades[i].id):
+						moviendoC.append([r, p]) # Añadir este punto a mover
 			break
 
 def editar(event):
@@ -224,11 +230,15 @@ def editar(event):
 	dibujarLinea()
 
 def soltar(event):
-	global moviendo, moviendoC, linea, lineas, ciudad, finalciudades, ciudades
+	global moviendo, moviendoC, linea, lineas, ciudad, finalciudades, ciudades, rutas, finalrutas
 	
 	if (ciudad and moviendoC[0] != -1):
 		finalciudades[moviendoC[0]].x = ciudades[moviendoC[0]].ciudad.x
 		finalciudades[moviendoC[0]].y = ciudades[moviendoC[0]].ciudad.y
+		
+		for i in range(1, len(moviendoC)): # Guardar el hecho que hemos movido la ruta que estaba conectada a la ciudad
+			rutas[moviendoC[i][0]].ruta.ruta = copy.deepcopy(finalrutas[moviendoC[i][0]].ruta) # Guadar las nuevas posiciones
+			# rutas[moviendoC[i][0]].ruta.paradas = copy.deepcopy(finalrutas[moviendoC[i][0]].paradas) # Guardar las paradas si se ha conectado a una nueva parada
 		
 		moviendoC = [-1]
 		return
@@ -250,7 +260,7 @@ def soltar(event):
 	moviendo = []
 
 def moverCiudad(event):
-	global ciudades, moviendoC, canvas, finalciudades
+	global ciudades, moviendoC, canvas, finalciudades, rutas, moviendo
 	
 	if (moviendoC[0] != -1):
 		ciudades[moviendoC[0]].ciudad.x = event.x
@@ -258,8 +268,13 @@ def moverCiudad(event):
 		
 		canvas.delete(ciudades[moviendoC[0]].cuadrado)
 		ciudades[moviendoC[0]].cuadrado = canvas.create_rectangle(event.x - 2, event.y - 2, event.x + 2, event.y + 2, fill="red", activefill="cyan")
-	
-		# TODO : ESTARIA BIEN QUE MOVIERA TODAS LAS RUTAS CONECTADAS A ESA CIUDAD
+		
+		for i in range(1, len(moviendoC)): # Mover las rutas que estaban conectadas a la ciudad
+			finalrutas[moviendoC[i][0]].ruta[moviendoC[i][1]][0] = event.x
+			finalrutas[moviendoC[i][0]].ruta[moviendoC[i][1]][1] = event.y
+			
+			canvas.delete(rutas[moviendoC[i][0]].linea)
+			rutas[moviendoC[i][0]].linea = canvas.create_line(finalrutas[moviendoC[i][0]].ruta)
 
 def mmove(event):
 	global rutas, linea, lineas, moviendo, ciudad
@@ -275,8 +290,6 @@ def mmove(event):
 		canvas.delete(rutas[moviendo[0]].linea)
 		canvas.delete(rutas[moviendo[0]].circulos[moviendo[1]])
 		rutas[moviendo[0]].circulos[moviendo[1]] = create_circle(event.x, event.y, 3, canvas)
-		
-		# TODO : A LO MEJOR AÑADIR PARADAS SI SE PASA CERCA MIENTRAS SE ESTA EDITANDO
 	else:
 		temp = copy.deepcopy(lineas)
 		temp.append([event.x, event.y])
@@ -287,6 +300,10 @@ def guardarRuta(event):
 	global idR, linea, lineas, paradas, circulos
 	
 	if (len(lineas) < 2):
+		canvas.delete(circulos[0])
+		circulos = []
+		lineas = []
+		paradas = []
 		return
 	
 	temp = canvas.create_line(lineas)
@@ -303,6 +320,34 @@ def guardarRuta(event):
 	print("Ruta guardada con id", idR)
 	
 	generarIdRuta()
+
+def borrarPunto(event):
+	global ciudad, moviendo, canvas, rutas, finalrutas, lineas, linea
+	
+	if (ciudad or len(moviendo) != 2): # Si se estan editando las ciudades o no se esta editando una recta -> return
+		return
+	
+	if (len(finalrutas[moviendo[0]].ruta) == 2): # Mirar que hay mas de dos puntos, si hay menos se borra
+		borrarItem(event)
+		return
+	
+	del finalrutas[moviendo[0]].ruta[moviendo[1]]
+	del finalrutas[moviendo[0]].paradas[moviendo[1]]
+	
+	rutas[moviendo[0]].linea = canvas.create_line(finalrutas[moviendo[0]].ruta)
+	
+	canvas.delete(rutas[moviendo[0]].circulos[moviendo[1]])
+	
+	del rutas[moviendo[0]].circulos[moviendo[1]]
+	
+	rutas[moviendo[0]].ciudad = copy.deepcopy(finalrutas[moviendo[0]])
+	
+	canvas.delete(linea)
+	linea = None
+	
+	lineas = []
+	moviendo = []
+	circulos = []
 
 def borrarItem(event): # Para poder borrar se tiene que estar editando una ciudad o una ruta
 	global canvas, finalciudades, ciudad, moviendo, moviendoC, finalrutas, rutas, lineas, linea, circulos
@@ -326,8 +371,6 @@ def borrarItem(event): # Para poder borrar se tiene que estar editando una ciuda
 	
 	# Si estamos aqui es porque se esta borrando una ruta
 	if (len(moviendo) == 2): # Se quiere borrar una linea que se estaba modificando
-		print("a")
-		
 		lineas = []
 		
 		canvas.delete(rutas[moviendo[0]].linea) # Borrar linea
@@ -342,6 +385,9 @@ def borrarItem(event): # Para poder borrar se tiene que estar editando una ciuda
 		
 		moviendo = []
 	elif (linea != None):# Se quiere borrar la linea que se estaba haciendo
+		for c in circulos:
+			canvas.delete(c)
+		
 		lineas = []
 		circulos = []
 		paradas = []
@@ -350,10 +396,8 @@ def borrarItem(event): # Para poder borrar se tiene que estar editando una ciuda
 		linea = None
 
 def escribir(event):
-	if (ciudad):
-		escribirCiudades()
-	else:
-		escribirRutas()
+	escribirCiudades()
+	escribirRutas()
 
 def escribirCiudades():
 	global finalciudades
@@ -386,7 +430,8 @@ canvas.bind("<Motion>", mmove)
 root.bind("<C>", lambda event, a = 1 : setModo(a))
 root.bind("<R>", lambda event, a = 2 : setModo(a))
 
-root.bind("<BackSpace>", borrarItem)
+root.bind("<BackSpace>", borrarPunto)
+root.bind("<Delete>", borrarItem)
 
 root.bind("<Return>", escribir)
 

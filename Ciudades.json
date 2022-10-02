@@ -1,7 +1,122 @@
 [
     {
         "id": 0,
-        "x": 180,
-        "y": 525
+        "nombre": "GENF",
+        "x": 164,
+        "y": 856
+    },
+    {
+        "id": 1,
+        "nombre": "LAUSANNE",
+        "x": 331,
+        "y": 692
+    },
+    {
+        "id": 2,
+        "nombre": "BERNA",
+        "x": 638,
+        "y": 457
+    },
+    {
+        "id": 3,
+        "nombre": "GE-AIRPORT",
+        "x": 150,
+        "y": 857
+    },
+    {
+        "id": 4,
+        "nombre": "OLTEN",
+        "x": 803,
+        "y": 247
+    },
+    {
+        "id": 5,
+        "nombre": "ZURICH",
+        "x": 1025,
+        "y": 238
+    },
+    {
+        "id": 6,
+        "nombre": "STGALLEN",
+        "x": 1210,
+        "y": 194
+    },
+    {
+        "id": 7,
+        "nombre": "BASEL",
+        "x": 685,
+        "y": 137
+    },
+    {
+        "id": 8,
+        "nombre": "BRIG",
+        "x": 952,
+        "y": 689
+    },
+    {
+        "id": 9,
+        "nombre": "ARTH-GOLDAU",
+        "x": 1027,
+        "y": 406
+    },
+    {
+        "id": 10,
+        "nombre": "CHUR",
+        "x": 1347,
+        "y": 530
+    },
+    {
+        "id": 11,
+        "nombre": "FREIBURG",
+        "x": 527,
+        "y": 545
+    },
+    {
+        "id": 12,
+        "nombre": "LUCERNE",
+        "x": 940,
+        "y": 405
+    },
+    {
+        "id": 13,
+        "nombre": "BELLINZONA",
+        "x": 1209,
+        "y": 847
+    },
+    {
+        "id": 14,
+        "nombre": "LUGANO",
+        "x": 1174,
+        "y": 956
+    },
+    {
+        "id": 15,
+        "nombre": "NEUCHATEL",
+        "x": 437,
+        "y": 443
+    },
+    {
+        "id": 16,
+        "nombre": "BIENNE",
+        "x": 561,
+        "y": 365
+    },
+    {
+        "id": 17,
+        "nombre": "YVERDON",
+        "x": 343,
+        "y": 556
+    },
+    {
+        "id": 18,
+        "nombre": "BAD RAGGAZ",
+        "x": 1350,
+        "y": 413
+    },
+    {
+        "id": 19,
+        "nombre": "DELEMONT",
+        "x": 496,
+        "y": 210
     }
 ]

@@ -2,9 +2,12 @@
 
 # Teclas: R = Ruta ; C = Ciudad ; T = Tren ; BACKSPACE = Borrar
 
+# TODO : MARCAR LA LINEA QUE SE ESTA EDITANDO PARA QUE SE PUEDA DISTINGUIR
 # TODO : ACEPTAR COMO INPUT DEL USUARIO LOS ARCHIVOS PARA UTILIZAR
 # TODO : AÑADIR ZOOM
 # TODO : A LO MEJOR AÑADIR PARADAS SI SE PASA CERCA MIENTRAS SE ESTA EDITANDO
+# TODO : CREAR Y EDITAR LINEAS DE TREN (NO RUTAS)
+# TODO : AÑADIR UN TEXT HOLDER DONDE SE PUEDAN PONER INFORMACIONES
 
 import copy
 import math
@@ -15,21 +18,32 @@ from PIL import Image, ImageTk
 
 # --------- VARIABLES ---------
 
-ciudad = True
+top = None # Ventana extra para informaciones
+textBox = None # Textbox con el nombre de la ciudad que se esta creando
+nombreLin = None # Textbox con el nombre de la linea que se esta creando
+anadirParada = None # Boton de añadir parada
+
+ciudad = False # Estamos en modo ciudad ?
 
 ciudadesF = "Ciudades.json"
 rutasF = "Rutas.json"
+trenesF = "Trenes.json"
 
 moviendo = [] # Vacio cuando no se mueve una ruta, cuando se mueve una ruta [ruta_conectada , pos_ocupaba_ciudad]
 moviendoC = [-1] # Guarda la informacion de lo que hay que mover cuando se mueve una ciudad [id_ciudad , [ruta_conectada , pos_ocupaba_ciudad], ...]
 
 finalciudades = [] # Guarda las clases Ciudad
 ciudades = [] # Guarda las ciudades que son dibujadas
+
 finalrutas = [] # Guarda las clases Ruta que seran las que se escribiran en el json
 rutas = [] # Guarda las rutas que son dibujadas
 
-idR = -1
-idC = -1
+rutaActual = [] # Guarda [botonQuitar, ciudad, salida, llegada, id] del tren que se esta modificando ahora bajo la forma de los items en la pantalla
+finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el json
+
+idR = -1 # Id para la proxima ruta
+idC = -1 # Id para la proxima ciudad
+idT = -1 # Id para el proximo tren
 
 lineas = []  # Guarda los puntos de inflexion de la linea actual
 paradas = [] # Guarda los ids de las paradas
@@ -56,13 +70,14 @@ class CiudadDibujada:
 		self.cuadrado = cuadrado
 
 class Ciudad:
-	def __init__(self, id, x, y):
+	def __init__(self, id, nombre, x, y):
 		self.id = id
+		self.nombre = nombre
 		self.x = x
 		self.y = y
 
 class Tren:
-	def __init__(self, id, ruta, paradas, llegadas, salidas):
+	def __init__(self, id, nombre, ruta, paradas, llegadas, salidas):
 		self.id = id
 		self.ruta = ruta
 		
@@ -73,6 +88,7 @@ class Tren:
 # --------- SETUP ---------
 
 root = Tk()
+root.title("Editor de rutas")
 
 canvas = Canvas(width=5914, height=3691, bg='black') # Create the canvas with the image size
 
@@ -83,7 +99,7 @@ texto = canvas.create_text(300, 50, text="Creador de rutas", fill="black", font=
 
 # --------- FUNCIONES ---------
 
-def create_circle(x, y, r, canvas): #center coordinates, radius
+def create_circle(x, y, r, canvas): # Dibujar un circulo con coords centro y radio
     x0 = x - r
     y0 = y - r
     x1 = x + r
@@ -120,14 +136,32 @@ def generarIdRuta():
 				ok = True
 				break
 
+def generarIdTren():
+	global idT, finaltrenes
+	
+	idT = -1
+	
+	ok = True
+	while ok:
+		idT = idT + 1
+		ok = False
+		
+		for t in finaltrenes:
+			if (idT == t.id):
+				ok = True
+				break
+
 def distancia(pos0, pos1): # Distancia entre dos puntos
 	return math.sqrt( (pos0[0] - pos1[0])**2 + (pos0[1] - pos1[1])**2 )
 
 def distPointLine(p, pos0, pos1): # Distancia entre un punto y una recta designada por dos puntos
     return abs( (pos1[0] - pos0[0])*(pos0[1] - p[1]) - (pos0[0] - p[0])*(pos1[1] - pos0[1]) )/math.sqrt( (pos1[0] - pos0[0])**2 + (pos1[1] - pos0[1])**2 )
 
-def setModo(modo): # 1 = CIUDADES ; 2 = RUTAS
-	global texto, ciudad, linea
+def setModo(modo): # 1 = CIUDADES ; 2 = RUTAS ; 3 = TREN
+	global texto, ciudad, linea, top, moviendo, moviendoC
+	
+	if (top != None or linea != None or len(moviendo) > 0 or moviendoC[0] != -1): # No cambiar de modo si se esta creando una nueva ciudad, una nueva linea. Editando una ruta o una ciudad 
+		return
 	
 	if (modo == 1):
 		if (linea != None): # Check que no se esten editando rutas
@@ -135,9 +169,51 @@ def setModo(modo): # 1 = CIUDADES ; 2 = RUTAS
 		
 		ciudad = True
 		canvas.itemconfig(texto, text="Creador de ciudades")
-	else:
+	elif (modo == 2):
 		ciudad = False
 		canvas.itemconfig(texto, text="Creador de rutas")
+	else:
+		crearLineaTren()
+
+def existeNombre(nombre): # Check si existe el nombre de la ciudad o no
+	for n in finalciudades:
+		if (nombre == n.nombre):
+			return True
+	return False
+
+def getLineasDisponibles(): # Devuelve el nombre de todas las lineas disponibles para modificar
+	return [t.nombre for t in finaltrenes]
+
+def getTren(nombre): # Devuelve la posicion de la Ciudad en finalciudades
+	global finaltrenes
+	
+	for i in range(len(finaltrenes)):
+		if (finaltrenes.nombre == nombre):
+			return i
+	return -1
+
+def getCiudad(nombre): # Devuelve la posicion de la Ciudad en finalciudades
+	global finalciudades
+	
+	for i in range(len(finalciudades)):
+		if (finaltrenes.nombre == nombre):
+			return i
+	
+	return -1
+
+def getCiudades(idC = None): # Devuelve la lista de todas las ciudades disponibles para que pase un tren TODO: HACER QUE BUSQUE LAS CIUDADES QUE ESTAN CONECTADAS
+	if (idC == None):
+		return [c.nombre for c in finalciudades]
+	else:
+		previo = []
+		after = []
+		while (previo != after):
+			print("a")
+		# Coger todas las rutas que tienen a la parada como parada
+		# Coger las rutas que parar en las paradas que pasa la ruta de la parada inicial (recurrencia)
+
+def checkTiempo(t):
+	return (len(t) == 4 and t.isnumeric() and int(t[0:1]) < 24 and int(t[2:3]) < 60) # Devuelve true si es un numero valable
 
 def dibujarLinea():
 	global linea
@@ -146,14 +222,60 @@ def dibujarLinea():
 		canvas.delete(linea)
 		linea = canvas.create_line(lineas)
 
-def clickCiudad(event):
-	global finalciudades, ciudades, idC
+def registrarCiudad(event = None):
+	global top, extBox, finalciudades, ciudades, idC
 	
-	temp = Ciudad(idC, event.x, event.y)
+	nombre = textBox.get("1.0", "end-1c")
+	
+	if (len(nombre) < 2 or len(nombre) > 15 or existeNombre(nombre)):
+		return
+	
+	if (nombre[-1] == '\n'):
+		nombre = nombre[0:-1]
+	
+	temp = Ciudad(idC, nombre, lineas[0], lineas[1])
 	finalciudades.append(temp)
-	ciudades.append(CiudadDibujada(temp, canvas.create_rectangle(event.x - 2, event.y - 2, event.x + 2, event.y + 2, fill="red", activefill="cyan")))
+	ciudades.append(CiudadDibujada(temp, canvas.create_rectangle(lineas[0] - 2, lineas[1] - 2, lineas[0] + 2, lineas[1] + 2, fill="red", activefill="cyan")))
 	
 	generarIdCiudad()
+	
+	cancelarCiudad()
+
+def cancelarCiudad(event = None):
+	global top, lineas, textBox
+	
+	top.destroy()
+	
+	top = None
+	textBox = None
+	
+	lineas = []
+
+def clickCiudad(event):
+	global top, textBox, lineas
+	
+	if (top != None):
+		return
+	
+	lineas = [event.x, event.y]
+	
+	top = Toplevel()
+	top.title("Crear ciudad	")
+	
+	textBox = Text(top, height = 1, width = 15)
+	textBox.focus()
+	textBox.pack()
+	
+	acc = Button(top, text = "Aceptar", command = registrarCiudad).pack()
+	
+	can = Button(top, text = "Cancelar", command = cancelarCiudad).pack()
+	
+	top.bind("<Return>", registrarCiudad)
+	top.bind("<Escape>", cancelarCiudad)
+	
+	top.protocol("WM_DELETE_WINDOW",  cancelarCiudad)
+	
+	top.focus_force()
 
 def click(event):
 	global moviendo, ciudad
@@ -162,7 +284,7 @@ def click(event):
 		clickCiudad(event)
 		return
 	
-	if (len(moviendo) == 2): # Si se esta moviendo, out
+	if (len(moviendo) == 2 or top != None): # Si se esta moviendo o haciendo una linea de tren
 		return
 	
 	coords = [event.x, event.y]
@@ -395,25 +517,213 @@ def borrarItem(event): # Para poder borrar se tiene que estar editando una ciuda
 		canvas.delete(linea)
 		linea = None
 
+def elegirCiudad(value):
+	global rutaActual
+	
+	print(value)
+
+def quitarParada(par):
+	global rutaActual, anadirParada
+	
+	pos = -1
+	
+	for i in range(len(rutaActual)):
+		if (rutaActual[i][4] == par):
+			pos = i
+			break
+	
+	if (pos == -1): # Sanity check
+		return
+	
+	for i in range(len(rutaActual[pos]) - 1):
+		rutaActual[pos][i].destroy()
+	
+	dX = [10, 30, 150, 220]
+	
+	for i in range(pos + 1, len(rutaActual)):
+		dY = [43 + i*30, 40 + i*30, 45 + i*30, 45 + i*30]
+		for j in range(4):
+			rutaActual[i][j].place(x = dX[j], y = dY[j])
+	
+	del rutaActual[pos]
+	
+	anadirParada.destroy()
+	anadirParada = Button(top, text = "Añadir parada", command = addParada)
+	anadirParada.place(x = 10, y = 75 + len(rutaActual)*30)
+
+def addParada(pos = "None", lleg = "0000", sali = "0005"):
+	global top, rutaActual, anadirParada
+	
+	ciuds = getCiudades()
+	ciud = StringVar()
+	
+	if (pos == "None"):
+		ciud.set(ciuds[0])
+	else:
+		ciud.set(pos)
+	
+	length = len(rutaActual)
+	
+	dX = [10, 30, 250, 325]
+	dY = [73 + length*30, 70 + length*30, 75 + length*30, 75 + length*30]
+	
+	temp = []
+	
+	temp.append(Button(top, text = "X", command = lambda a = length : quitarParada(a)))
+	temp.append(OptionMenu(top, ciud, *ciuds))
+	temp.append(Text(top, heigh = 1, width = 4))
+	temp.append(Text(top, heigh = 1, width = 4))
+	temp.append(length)
+	
+	for i in range(4):
+		temp[i].place(x = dX[i], y = dY[i])
+	
+	rutaActual.append(temp)
+	
+	rutaActual[-1][2].insert(END, lleg)
+	rutaActual[-1][3].insert(END, sali)
+	
+	if (anadirParada != None): anadirParada.destroy()
+	anadirParada = Button(top, text = "Añadir parada", command = addParada)
+	anadirParada.place(x = 10, y = 105 + length*30)
+
+def nuevoTren():
+	global top, rutaActual, finalciudades, nombreLin, idT
+	
+	for i in range(len(rutaActual)): # Resetear por si se estaba haciendo una ruta y se pincha en nueva otra vez
+		for j in range(4):
+			top.delete(rutaActual[i][j])
+	
+	rutaActual = []
+	
+	if (nombreLin == None): nombreLin = Text(top, height = 1, width = 15)
+	nombreLin.place(x = 175, y = 50)
+	nombreLin.insert(END, "Linea " + str(idT))
+	nombreLin.focus()
+	
+	addParada()
+	
+def trenElegido(value):
+	global top, rutaActual, finaltrenes, nombreLin
+	
+	pos = getTren(value)
+	
+	if (pos == -1):
+		return
+	
+	for i in range(len(rutaActual)): # Resetear por si se estaba haciendo una ruta y se pincha en nueva otra vez
+		for j in range(4):
+			top.delete(rutaActual[i][j])
+	
+	rutaActual = []
+	
+	if (nombreLin == None): nombreLin = Text(top, height = 1, width = 15)
+	nombreLin.place(x = 175, y = 50)
+	nombreLin.insert(END, value)
+	nombreLin.focus()
+	
+	for i in range(finaltrenes[pos].paradas):
+		addParada(finaltrenes[pos].paradas[i], finaltrenes[pos].llegadas[i], finaltrenes[pos].salidas[i])
+	
+	print(value)
+
+def guardarTren(event = None):
+	global finaltrenes, finalciudades, rutaActual, nombreLin
+	
+	if (len(rutaActual) < 2):
+		return
+	
+	for t in finaltrenes: # Check : nombre nuevo
+		if (t.nombre == nombreLin.get()):
+			return
+	
+	for i in range(len(rutaActual)):
+		if (not checkTiempo(rutaActual[i][2].get("1.0", "end-1c")) or (not checkTiempo(rutaActual[i][3].get("1.0", "end-1c"))) or (int(rutaActual[i][2].get("1.0", "end-1c")) >= int(rutaActual[i][3].get("1.0", "end-1c"))) or (i > 0 and int(rutaActual[i - 1][3].get("1.0", "end-1c")) >= int(rutaActual[i][2].get("1.0", "end-1c")))): # Check primero que el formato de tiempo de cada tiempo individual sea correcto, despues mirar que la salida sea despues de la llegada, despues mirar que la llegada a la proxima parada no sea antes que la salida
+			print("Hora incorrecta")
+			return
+	
+	temppara = [finalciudades[getCiudad(c[1].get())].id for c in rutaActual]
+	templleg = [c[2].get("1.0", "end-1c") for c in rutaActual]
+	tempsali = [c[3].get("1.0", "end-1c") for c in rutaActual]
+	
+	finaltrenes.append(Tren(idT, ))
+	
+	generarIdTren()
+	
+	escribirTrenes()
+	
+	print("Línea de tren guardada")
+
+def cancelarTren(evenet = None):
+	global top, nombreLin, anadirParada, rutaActual
+	
+	top.destroy()
+	
+	rutaActual = []
+	
+	top = None
+	nombreLin = None
+	anadirParada = None
+
+def crearLineaTren():
+	global finaltrenes, top
+	
+	top = Toplevel()
+	top.geometry("400x400")
+	top.title("Crear ruta")
+	
+	Button(top, text = "Nueva línea", command = nuevoTren).pack()
+	
+	lins = getLineasDisponibles()
+	lin = StringVar()
+	lin.set("Selecciona una línea")
+	if (len(lins) > 0):
+		OptionMenu(top, lin, *lins, command = trenElegido).pack()
+	
+	Button(top, text = "Guardar", command = guardarTren).place(x = 175, y = 375)
+	
+	top.bind("<Return>", guardarTren)
+	top.bind("<Return>", cancelarTren)
+	
+	top.protocol("WM_DELETE_WINDOW",  cancelarTren)
+	
+	top.focus_force()
+
 def escribir(event):
+	global top
+	
+	if (top != None):
+		return
+	
 	escribirCiudades()
 	escribirRutas()
+	escribirTrenes()
 
 def escribirCiudades():
 	global finalciudades
 	
 	with open(ciudadesF, "w+") as f:
-		stringF = json.dump([c.__dict__ for c in finalciudades], f, indent=4)
+		json.dump([c.__dict__ for c in finalciudades], f, indent=4)
 		f.close()
-	print("Ciudades guardadas")
+	print(len(finalciudades), "ciudades guardadas")
 
 def escribirRutas():
 	global finalrutas
 	
 	with open(rutasF, "w+") as f:
-		stringF = json.dump([r.__dict__ for r in finalrutas], f, indent=4)
+		json.dump([r.__dict__ for r in finalrutas], f, indent=4)
 		f.close()
-	print("Rutas guardadas")
+	
+	print(len(finalrutas), "rutas guardadas")
+
+def escribirTrenes():
+	global finaltrenes
+	
+	with open(trenesF, "w+") as f:
+		json.dump([t.__dict__ for t in finaltrenes], f, indent=4)
+		f.close()
+	
+	print(len(finaltrenes), " trenes guardados")
 
 # --------- BINDS ---------
 
@@ -429,6 +739,11 @@ canvas.bind("<Motion>", mmove)
 
 root.bind("<C>", lambda event, a = 1 : setModo(a))
 root.bind("<R>", lambda event, a = 2 : setModo(a))
+root.bind("<T>", lambda event, a = 3 : setModo(a))
+
+root.bind("<c>", lambda event, a = 1 : setModo(a))
+root.bind("<r>", lambda event, a = 2 : setModo(a))
+root.bind("<t>", lambda event, a = 3 : setModo(a))
 
 root.bind("<BackSpace>", borrarPunto)
 root.bind("<Delete>", borrarItem)
@@ -436,6 +751,18 @@ root.bind("<Delete>", borrarItem)
 root.bind("<Return>", escribir)
 
 canvas.pack()
+
+def do_zoom(event):
+    x = canvas.canvasx(event.x)
+    y = canvas.canvasy(event.y)
+    factor = 1.001 ** event.delta
+    canvas.scale(ALL, x, y, factor, factor)
+
+# TEST : FUNCIONA - PROBLEMA LA IMAGEN DE FONDO Y LAS RUTAS NO ESCALAN
+# canvas.bind("<MouseWheel>", do_zoom)
+# canvas.bind('<ButtonPress-1>', lambda event: canvas.scan_mark(event.x, event.y))
+# canvas.bind("<B1-Motion>", lambda event: canvas.scan_dragto(event.x, event.y, gain=1))
+
 
 # --------- INIT FUNCS ---------
 
@@ -448,7 +775,7 @@ def cargarCiudades():
 	data = json.loads(f.read())
 	
 	for i in data: # Dibujar ciudades
-		temp = Ciudad(i['id'], i['x'], i['y'])
+		temp = Ciudad(i['id'], i['nombre'], i['x'], i['y'])
 		finalciudades.append(temp)
 		
 		ciudades.append(CiudadDibujada(temp, canvas.create_rectangle(i['x'] - 2, i['y'] - 2, i['x'] + 2, i['y'] + 2, fill="red", activefill="cyan")))
@@ -482,13 +809,33 @@ def cargarRutas():
 	
 	print(len(finalrutas), "rutas cargadas")
 
+def cargarTrenes():
+	global finaltrenes
+	
+	print("Cargando trenes")
+	
+	f = open(trenesF, 'r')
+	data = json.loads(f.read())
+	
+	for i in data: # Meter trenes en la lista
+		finaltrenes.append(Tren(i['id'], i['nombre'], i['ruta'], i['paradas'], i['llegadas'], i['salidas']))
+	
+	f.close()
+	
+	print(len(finaltrenes), "trenes cargados")
+
 cargarCiudades()
 print()
 cargarRutas()
 print()
+cargarTrenes()
+print()
 setModo(2)
+print()
+print("Generando ids")
 generarIdRuta()
 generarIdCiudad()
+generarIdTren()
 print()
 
 mainloop()

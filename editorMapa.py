@@ -2,11 +2,9 @@
 
 # Teclas: R = Ruta ; C = Ciudad ; T = Tren ; BACKSPACE = Borrar
 
-# TODO : MARCAR LA LINEA QUE SE ESTA EDITANDO PARA QUE SE PUEDA DISTINGUIR
 # TODO : ACEPTAR COMO INPUT DEL USUARIO LOS ARCHIVOS PARA UTILIZAR
 # TODO : AÑADIR ZOOM
-# TODO : A LO MEJOR AÑADIR PARADAS SI SE PASA CERCA MIENTRAS SE ESTA EDITANDO
-# TODO : CREAR Y EDITAR LINEAS DE TREN (NO RUTAS)
+# TODO : CREAR Y EDITAR LINEAS DE TREN CON DIFERENTES HORARIOS (NO RUTAS)
 # TODO : AÑADIR UN TEXT HOLDER DONDE SE PUEDAN PONER INFORMACIONES
 
 import copy
@@ -24,6 +22,7 @@ nombreLin = None # Textbox con el nombre de la linea que se esta creando
 anadirParada = None # Boton de añadir parada
 
 ciudad = False # Estamos en modo ciudad ?
+eraCiudad = False # Estamos moviendo un punto que era una ciudad ?
 
 ciudadesF = "Ciudades.json"
 rutasF = "Rutas.json"
@@ -38,6 +37,7 @@ ciudades = [] # Guarda las ciudades que son dibujadas
 finalrutas = [] # Guarda las clases Ruta que seran las que se escribiran en el json
 rutas = [] # Guarda las rutas que son dibujadas
 
+trayectosActuales = [] # Guarda todos los rutaActual
 rutaActual = [] # Guarda [botonQuitar, ciudad, salida, llegada, id] del tren que se esta modificando ahora bajo la forma de los items en la pantalla
 finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el json
 
@@ -77,13 +77,13 @@ class Ciudad:
 		self.y = y
 
 class Tren:
-	def __init__(self, id, nombre, ruta, paradas, llegadas, salidas):
+	def __init__(self, id, nombre, trayecto):
 		self.id = id
+		self.nombre = nombre
+		
 		self.ruta = ruta
 		
-		self.paradas = paradas
-		self.llegadas = llegadas
-		self.salidas = salidas
+		self.trayecto = trayecto # [ [paradas, ruta, llegadas , salidas], ... ] Array de arrays contiene las pardas, la ruta a seguir, llegadas y salidas de cada tren (pueden haber varios a la vez con rutas diferentes)
 
 # --------- SETUP ---------
 
@@ -155,7 +155,10 @@ def distancia(pos0, pos1): # Distancia entre dos puntos
 	return math.sqrt( (pos0[0] - pos1[0])**2 + (pos0[1] - pos1[1])**2 )
 
 def distPointLine(p, pos0, pos1): # Distancia entre un punto y una recta designada por dos puntos
-    return abs( (pos1[0] - pos0[0])*(pos0[1] - p[1]) - (pos0[0] - p[0])*(pos1[1] - pos0[1]) )/math.sqrt( (pos1[0] - pos0[0])**2 + (pos1[1] - pos0[1])**2 )
+	rc = math.sqrt( (pos1[0] - pos0[0])**2 + (pos1[1] - pos0[1])**2 )
+	if (rc == 0):
+		return 0
+	return abs( (pos1[0] - pos0[0])*(pos0[1] - p[1]) - (pos0[0] - p[0])*(pos1[1] - pos0[1]) ) / rc
 
 def setModo(modo): # 1 = CIUDADES ; 2 = RUTAS ; 3 = TREN
 	global texto, ciudad, linea, top, moviendo, moviendoC
@@ -181,8 +184,16 @@ def existeNombre(nombre): # Check si existe el nombre de la ciudad o no
 			return True
 	return False
 
-def getLineasDisponibles(): # Devuelve el nombre de todas las lineas disponibles para modificar
+def getLineasDisponibles(): # Devuelve el nombre de todas las lineas de tren disponibles para modificar
 	return [t.nombre for t in finaltrenes]
+
+def getRuta(id): # Devuelve la posicion de la Ruta en finalrutas
+	
+	for i in range(len(finalrutas)):
+		if (finalrutas[i].id == id):
+			return i
+	
+	return None
 
 def getTren(nombre): # Devuelve la posicion de la Ciudad en finalciudades
 	global finaltrenes
@@ -190,27 +201,62 @@ def getTren(nombre): # Devuelve la posicion de la Ciudad en finalciudades
 	for i in range(len(finaltrenes)):
 		if (finaltrenes.nombre == nombre):
 			return i
-	return -1
+	return None
+
+def getRutasPorCiudad(idC): # Rutas que pasan por una ciudad
+	temp = [] # Ciudades 
+
+	for r in finalrutas:
+		if (idC in r.paradas and not r.id in temp):
+			temp.append(r.id)
+
+	return temp
+
+def getCiudadId(id): # Devuelve la posicion de la Ciudad en finalciudades
+	for i in range(len(finalciudades)):
+		if (finalciudades[i].id == id):
+			return i
+	
+	return None
 
 def getCiudad(nombre): # Devuelve la posicion de la Ciudad en finalciudades
 	global finalciudades
 	
 	for i in range(len(finalciudades)):
-		if (finaltrenes.nombre == nombre):
+		if (finalciudades[i].nombre == nombre):
 			return i
 	
-	return -1
+	return None
 
-def getCiudades(idC = None): # Devuelve la lista de todas las ciudades disponibles para que pase un tren TODO: HACER QUE BUSQUE LAS CIUDADES QUE ESTAN CONECTADAS
+def getCiudades(idC = None): # Devuelve la lista de todas las ciudades disponibles para que pase un tren
 	if (idC == None):
 		return [c.nombre for c in finalciudades]
-	else:
-		previo = []
-		after = []
-		while (previo != after):
-			print("a")
-		# Coger todas las rutas que tienen a la parada como parada
-		# Coger las rutas que parar en las paradas que pasa la ruta de la parada inicial (recurrencia)
+	
+	previo = [idC] # Lista con ids de las paradas que hay que escanear
+	after = [] # Lista con ids de las paradas que han sido escaneadas
+	
+	while (previo != after):
+		for c in previo:
+			if (c in after): # NO escanear las que ya han sido escaneadas
+				continue
+			
+			temp = getRutasPorCiudad(c) # Coge las rutas que pasan por la ciudad c
+			after.append(c) # Ya se ha investigado la ciudad c, por lo que se añade en after
+			
+			for r in temp:
+				for par in finalrutas[getRuta(r)].paradas:
+					if (par != -1 and not par in previo):
+						previo.append(par)
+	
+	after.remove(idC) # Quitar la ciudad de origen
+	
+	return [finalciudades[getCiudadId(c)].nombre for c in after] # Quitar la ciudad que se nos ha dado
+
+def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) TODO : HACER QUE MUESTRE TODAS LAS RUTAS POSIBLES
+	return None
+
+def beautifyTiempo(txt):
+	return "0"*(4 - len(txt)) + txt
 
 def checkTiempo(t):
 	return (len(t) == 4 and t.isnumeric() and int(t[0:1]) < 24 and int(t[2:3]) < 60) # Devuelve true si es un numero valable
@@ -220,7 +266,7 @@ def dibujarLinea():
 	
 	if (len(lineas) >= 2):
 		canvas.delete(linea)
-		linea = canvas.create_line(lineas)
+		linea = canvas.create_line(lineas, width = 3, fill = "red")
 
 def registrarCiudad(event = None):
 	global top, extBox, finalciudades, ciudades, idC
@@ -290,19 +336,18 @@ def click(event):
 	coords = [event.x, event.y]
 	
 	paradas.append(-1)
-	circulo = create_circle(event.x, event.y, 3, canvas)
-	circulos.append(circulo)
+	circulos.append(create_circle(event.x, event.y, 3, canvas)) # Añadir circulo del lugar actual
 	
 	for i in range(len(finalciudades)): # Detectar si el click ha sido cerca de una ciudad para registrarlo como una parada
 		if (distancia(coords, [finalciudades[i].x, finalciudades[i].y]) < 5):
-			canvas.delete(circulo)
+			canvas.delete(circulos[-1])
 			circulos[-1] = -1 # Mantener algo por si acaso se borrara la estacion
 			
 			coords = [finalciudades[i].x, finalciudades[i].y]
 			paradas[-1] = finalciudades[i].id
 			break
 	
-	lineas.append(coords) # Si no se ha seleccionado una ciudad, entonces se crea un circulo para poder mover
+	lineas.append(coords) # Si no se ha seleccionado una ciudad, entonces se crea un circulo para poder mover (no pasa con lineas nuevas)
 	
 	dibujarLinea()
 
@@ -320,7 +365,7 @@ def editarCiudad(coords):
 			break
 
 def editar(event):
-	global moviendo, ciudad, finalrutas, rutas, canvas
+	global moviendo, ciudad, finalrutas, rutas, canvas, lineas, eraCiudad
 	
 	coords = [event.x, event.y]
 	
@@ -333,8 +378,18 @@ def editar(event):
 	
 	for r in range(len(finalrutas)): # Detectar si el click ha sido en un punto de inflexion de la ruta para moverlo
 		for i in range(len(finalrutas[r].ruta)):
-			if (finalrutas[r].paradas[i] == -1 and distancia(finalrutas[r].ruta[i], coords) < 5):
+			if (distancia(finalrutas[r].ruta[i], coords) < 5):
 				moviendo = [r, i]
+				
+				eraCiudad = False
+				
+				if (finalrutas[r].paradas[i] != -1): # El punto que se ha seleccionado es una parada
+					rutas[r].circulos[i] = create_circle(event.x, event.y, 3, canvas) # Crear un circulo visto que ya no es una parada, si no un punto de inflexion de la ruta
+					
+					finalrutas[r].paradas[i] = -1 # Decir que la parada anterior ya no es una parada
+					
+					eraCiudad = True
+
 				return
 	
 	if (len(moviendo) > 0): # Si ya se está moviendo un punto de inflexion, volver
@@ -343,10 +398,18 @@ def editar(event):
 	for r in range(len(finalrutas)): # Añadir puntos en una recta
 		for i in range(len(finalrutas[r].ruta) - 1):
 			if (distPointLine(coords, finalrutas[r].ruta[i], finalrutas[r].ruta[i + 1]) < 5):
-				finalrutas[r].ruta.insert(i+1, [event.x, event.y])
-				finalrutas[r].paradas.insert(i+1, -1)
-				rutas[r].circulos.insert(i+1, create_circle(event.x, event.y, 3, canvas))
-				moviendo = [r, i+1]
+				
+				finalrutas[r].ruta.insert(i+1, [event.x, event.y]) # Insertar la posicion actual en la lista
+				finalrutas[r].paradas.insert(i+1, -1) # Decir que el punto que acabamos de insertar no es una parada
+				
+				rutas[r].circulos.insert(i+1, create_circle(event.x, event.y, 3, canvas)) # Poner un ciculo visto que no es una parada
+				
+				moviendo = [r, i+1] # Indicar el punto que estamos moviendo visto que ya ha sido integrado en la lista
+				
+				lineas = copy.deepcopy(finalrutas[r].ruta) # Copiar la lista lineas para poder dibujar la linea que estamos editando
+				
+				eraCiudad = False
+				
 				break
 	
 	dibujarLinea()
@@ -354,13 +417,13 @@ def editar(event):
 def soltar(event):
 	global moviendo, moviendoC, linea, lineas, ciudad, finalciudades, ciudades, rutas, finalrutas
 	
-	if (ciudad and moviendoC[0] != -1):
+	if (ciudad and moviendoC[0] != -1): # Si se esta moviendo una ciudad
 		finalciudades[moviendoC[0]].x = ciudades[moviendoC[0]].ciudad.x
 		finalciudades[moviendoC[0]].y = ciudades[moviendoC[0]].ciudad.y
 		
 		for i in range(1, len(moviendoC)): # Guardar el hecho que hemos movido la ruta que estaba conectada a la ciudad
 			rutas[moviendoC[i][0]].ruta.ruta = copy.deepcopy(finalrutas[moviendoC[i][0]].ruta) # Guadar las nuevas posiciones
-			# rutas[moviendoC[i][0]].ruta.paradas = copy.deepcopy(finalrutas[moviendoC[i][0]].paradas) # Guardar las paradas si se ha conectado a una nueva parada
+			rutas[moviendoC[i][0]].ruta.paradas = copy.deepcopy(finalrutas[moviendoC[i][0]].paradas) # Guardar las paradas si se ha conectado a una nueva parada
 		
 		moviendoC = [-1]
 		return
@@ -371,7 +434,8 @@ def soltar(event):
 	finalrutas[moviendo[0]].ruta = copy.deepcopy(lineas)
 	
 	rutas[moviendo[0]].linea = canvas.create_line(lineas)
-	rutas[moviendo[0]].ruta.ruta = copy.deepcopy(lineas)
+	rutas[moviendo[0]].ruta.ruta = copy.deepcopy(lineas) # [Array con las clases LineaDibujada].[Clase Ruta].[Array que guarda todos los puntos de inflexion]
+	rutas[moviendo[0]].ruta.paradas = copy.deepcopy(finalrutas[moviendo[0]].paradas) # Copiar las paradas
 	
 	canvas.delete(linea)
 	linea = None
@@ -407,15 +471,30 @@ def mmove(event):
 	
 	if (len(moviendo) == 2):
 		lineas = copy.deepcopy(finalrutas[moviendo[0]].ruta)
-		lineas[moviendo[1]] = [event.x, event.y]
+		lineas[moviendo[1]] = [event.x, event.y] # El punto que estamos moviendo
 		
 		canvas.delete(rutas[moviendo[0]].linea)
 		canvas.delete(rutas[moviendo[0]].circulos[moviendo[1]])
+		
 		rutas[moviendo[0]].circulos[moviendo[1]] = create_circle(event.x, event.y, 3, canvas)
-	else:
-		temp = copy.deepcopy(lineas)
-		temp.append([event.x, event.y])
-	
+		
+		dibujarLinea()
+		
+		if (eraCiudad): # Si era ciudad, no hay que mirar que este cerca de una parada ya que detectara la ciudad en la que estaba
+			return
+		
+		for c in finalciudades:
+			if (distancia([c.x, c.y], lineas[moviendo[1]]) < 5): # Estamos cerca de una ciudad -> establecerla como parada
+				lineas[moviendo[1]] = [c.x, c.y]
+				
+				finalrutas[moviendo[0]].paradas[moviendo[1]] = c.id # Registrar la parada
+				
+				canvas.delete(rutas[moviendo[0]].circulos[moviendo[1]]) # Borrar el circulo que decia que este punto era independiente
+				rutas[moviendo[0]].circulos[moviendo[1]] = -1 # Echoes of a circle
+				
+				soltar(None) # Ejecutar como si hubiera soltado el raton :>
+				return
+
 	dibujarLinea()
 
 def guardarRuta(event):
@@ -535,7 +614,7 @@ def quitarParada(par):
 	if (pos == -1): # Sanity check
 		return
 	
-	for i in range(len(rutaActual[pos]) - 1):
+	for i in range(len(rutaActual[pos]) - 2):
 		rutaActual[pos][i].destroy()
 	
 	dX = [10, 30, 150, 220]
@@ -551,10 +630,14 @@ def quitarParada(par):
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
 	anadirParada.place(x = 10, y = 75 + len(rutaActual)*30)
 
-def addParada(pos = "None", lleg = "0000", sali = "0005"):
+def addParada(pos = "None", lleg = "0000", sali = "0005"): # TODO : CAMBIAR A ESTRUCTURA DE rutaActual para acomodar los horarios (mismo tren que puede pasar varias veces)
 	global top, rutaActual, anadirParada
 	
-	ciuds = getCiudades()
+	if (len(rutaActual) > 0):
+		ciuds = getCiudades(finalciudades[getCiudad(rutaActual[-1][5].get())].id)
+	else:
+		ciuds = getCiudades(None)
+	
 	ciud = StringVar()
 	
 	if (pos == "None"):
@@ -574,14 +657,19 @@ def addParada(pos = "None", lleg = "0000", sali = "0005"):
 	temp.append(Text(top, heigh = 1, width = 4))
 	temp.append(Text(top, heigh = 1, width = 4))
 	temp.append(length)
+	temp.append(ciud)
 	
 	for i in range(4):
 		temp[i].place(x = dX[i], y = dY[i])
 	
 	rutaActual.append(temp)
 	
-	rutaActual[-1][2].insert(END, lleg)
-	rutaActual[-1][3].insert(END, sali)
+	if (len(rutaActual) > 1 and lleg == "0000" and sali == "0005"):
+		rutaActual[-1][2].insert(END, beautifyTiempo(str(int(rutaActual[-2][2].get("1.0",'end-1c')) + 100)))
+		rutaActual[-1][3].insert(END, beautifyTiempo(str(int(rutaActual[-2][3].get("1.0",'end-1c')) + 100)))
+	else:
+		rutaActual[-1][2].insert(END, beautifyTiempo(lleg))
+		rutaActual[-1][3].insert(END, beautifyTiempo(sali))
 	
 	if (anadirParada != None): anadirParada.destroy()
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
@@ -608,9 +696,6 @@ def trenElegido(value):
 	
 	pos = getTren(value)
 	
-	if (pos == -1):
-		return
-	
 	for i in range(len(rutaActual)): # Resetear por si se estaba haciendo una ruta y se pincha en nueva otra vez
 		for j in range(4):
 			top.delete(rutaActual[i][j])
@@ -628,13 +713,13 @@ def trenElegido(value):
 	print(value)
 
 def guardarTren(event = None):
-	global finaltrenes, finalciudades, rutaActual, nombreLin
+	global idT, finaltrenes, finalciudades, rutaActual, nombreLin
 	
-	if (len(rutaActual) < 2):
+	if (len(rutaActual) < 2): # Check : la ruta tiene más de una parada
 		return
 	
 	for t in finaltrenes: # Check : nombre nuevo
-		if (t.nombre == nombreLin.get()):
+		if (t.nombre == nombreLin.get("1.0",'end-1c')):
 			return
 	
 	for i in range(len(rutaActual)):
@@ -642,11 +727,9 @@ def guardarTren(event = None):
 			print("Hora incorrecta")
 			return
 	
-	temppara = [finalciudades[getCiudad(c[1].get())].id for c in rutaActual]
-	templleg = [c[2].get("1.0", "end-1c") for c in rutaActual]
-	tempsali = [c[3].get("1.0", "end-1c") for c in rutaActual]
+	temptrayecto = [[finalciudades[getCiudad(c[5].get())].id for c in rutaActual], ,[c[2].get("1.0", "end-1c") for c in rutaActual], [c[3].get("1.0", "end-1c") for c in rutaActual]]
 	
-	finaltrenes.append(Tren(idT, ))
+	finaltrenes.append(Tren(idT, nombreLin.get("1.0",'end-1c'), ))
 	
 	generarIdTren()
 	
@@ -692,7 +775,7 @@ def crearLineaTren():
 def escribir(event):
 	global top
 	
-	if (top != None):
+	if (top != None): # Si hay ventana Pop-up volvemos
 		return
 	
 	escribirCiudades()
@@ -800,6 +883,7 @@ def cargarRutas():
 		
 		for i in range(len(temp.ruta)):
 			if (temp.paradas[i] != -1):
+				tempC.append(-1) # Añadir un circulo vacio
 				continue
 			tempC.append(create_circle(temp.ruta[i][0], temp.ruta[i][1], 3, canvas))
 		
@@ -818,7 +902,7 @@ def cargarTrenes():
 	data = json.loads(f.read())
 	
 	for i in data: # Meter trenes en la lista
-		finaltrenes.append(Tren(i['id'], i['nombre'], i['ruta'], i['paradas'], i['llegadas'], i['salidas']))
+		finaltrenes.append(Tren(i['id'], i['nombre'], i['ruta'], i['paradas'], i['horarios']))
 	
 	f.close()
 	

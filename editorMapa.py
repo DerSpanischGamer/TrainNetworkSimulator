@@ -4,7 +4,6 @@
 
 # IMPORTANTE : ¡¡¡ EMPEZAR A CREAR LAS LINEAS DE TRENES UNA VEZ QUE LAS RUTAS Y LAS ESTACIONES ESTÉN ACABADAS !!!
 
-# TODO : CREAR Y EDITAR LINEAS DE TREN CON DIFERENTES HORARIOS (NO RUTAS)
 # TODO : ACEPTAR COMO INPUT DEL USUARIO LOS ARCHIVOS PARA UTILIZAR
 # TODO : AÑADIR UN TEXT HOLDER DONDE SE PUEDAN PONER INFORMACIONES
 # TODO : AÑADIR ZOOM
@@ -26,6 +25,7 @@ horarioAct = None # Label con el numero del horario que estamos editando ahora
 anadirParada = None # Boton de añadir parada
 trayectoSig = None # Siguiente trayecto (añade uno si no existe)
 trayectoAnt = None # Trayecto anterior (el boton se oculta si no hay)
+trayectoDel = None # Borrar el trayecto actual
 
 ciudad = False # Estamos en modo ciudad ?
 eraCiudad = False # Estamos moviendo un punto que era una ciudad ?
@@ -44,8 +44,11 @@ finalrutas = [] # Guarda las clases Ruta que seran las que se escribiran en el j
 rutas = [] # Guarda las rutas que son dibujadas
 
 posActual = 0 # Que trayecto se esta modificando
-trayectosActuales = [[]] # Guarda todos los horarios que puede tener un tren
+trayectosActuales = [[]] # Guarda todos los horarios que puede tener un tren [ columna1 ; columna2 ; ... ; columnnan]
 finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el json
+
+lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
+rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
 idR = -1 # Id para la proxima ruta
 idC = -1 # Id para la proxima ciudad
@@ -83,13 +86,11 @@ class Ciudad:
 		self.y = y
 
 class Tren:
-	def __init__(self, id, nombre, trayecto):
+	def __init__(self, id, nombre, trayectos):
 		self.id = id
 		self.nombre = nombre
 		
-		self.ruta = ruta
-		
-		self.trayecto = trayecto # [ [paradas, ruta, llegadas , salidas], ... ] Array de arrays contiene las pardas, la ruta a seguir, llegadas y salidas de cada tren (pueden haber varios a la vez con rutas diferentes)
+		self.trayectos = trayectos # [ [paradas, ruta, llegadas , salidas], ... ] Array de arrays contiene las pardas, la ruta a seguir, llegadas y salidas de cada tren (pueden haber varios a la vez con rutas diferentes)
 
 # --------- SETUP ---------
 
@@ -209,16 +210,27 @@ def getRuta(id): # Devuelve la posicion de la Ruta en finalrutas
 	
 	return None
 
-def getTren(nombre): # Devuelve la posicion de la Ciudad en finalciudades
+def getTren(nombre): # Devuelve la posicion de la Tren en finaltrenes
 	global finaltrenes
 	
 	for i in range(len(finaltrenes)):
-		if (finaltrenes.nombre == nombre):
+		if (finaltrenes[i].nombre == nombre):
 			return i
 	
 	return None
 
-def getRutasPorCiudad(idC): # Rutas que pasan por una ciudad
+def getRutaId(idR): # Devuelve la posicion de Ruta en finalrutas
+	global finalrutas
+	
+	pos = 0
+	
+	for i in range(len(finalrutas)):
+		if (finalrutas[i].id == idR):
+			return pos
+	
+	return None
+
+def getRutasPorCiudad(idC): # Devuelve el id de las rutas que pasan por una ciudad
 	temp = [] # Ciudades 
 
 	for r in finalrutas:
@@ -227,7 +239,7 @@ def getRutasPorCiudad(idC): # Rutas que pasan por una ciudad
 
 	return temp
 
-def getCiudadId(id): # Devuelve la posicion de la Ciudad en finalciudades
+def getCiudadId(id): # Devuelve la posicion de la Ciudad en finalciudades dando el id de la ciudad
 	global finalciudades
 	
 	for i in range(len(finalciudades)):
@@ -236,7 +248,7 @@ def getCiudadId(id): # Devuelve la posicion de la Ciudad en finalciudades
 	
 	return None
 
-def getCiudad(nombre): # Devuelve la posicion de la Ciudad en finalciudades
+def getCiudad(nombre): # Devuelve la posicion de la Ciudad en finalciudades dando el nombre de la ciudad
 	global finalciudades
 	
 	for i in range(len(finalciudades)):
@@ -245,14 +257,13 @@ def getCiudad(nombre): # Devuelve la posicion de la Ciudad en finalciudades
 	
 	return None
 
-def getCiudades(idC = None): # Devuelve la lista de todas las ciudades disponibles para que pase un tren
+def getCiudades(idC, idQ): # Devuelve la lista de todas las ciudades disponibles para que pase un tren
 	global finalciudades, finalrutas
 	
-	if (idC == None):
-		return [c.nombre for c in finalciudades]
+	if (idC == None): return [c.nombre for c in finalciudades]
 	
-	previo = [idC] # Lista con ids de las paradas que hay que escanear
-	after = [] # Lista con ids de las paradas que han sido escaneadas
+	previo = [idC]	# Lista con ids de las paradas que hay que escanear
+	after = []		# Lista con ids de las paradas que han sido escaneadas
 	
 	while (previo != after):
 		for c in previo:
@@ -267,18 +278,78 @@ def getCiudades(idC = None): # Devuelve la lista de todas las ciudades disponibl
 					if (par != -1 and not par in previo):
 						previo.append(par)
 	
-	after.remove(idC) # Quitar la ciudad de origen
+	if (idQ != None): after.remove(idQ) # Quitar la ciudad de origen
 	
 	return [finalciudades[getCiudadId(c)].nombre for c in after] # Quitar la ciudad que se nos ha dado
 
-def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) TODO : HACER QUE MUESTRE TODAS LAS RUTAS POSIBLES
+def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino
 	global finalrutas
 	
-	temp = []
+	temp = [] # La ruta que tiene que seguir el tren SIN la posicion de las ciudades de origen y destino [pos.x pos.y]
 	
-	rOrigen = getRutasPorCiudad(origen)
+	rOrigen = getRutasPorCiudad(origen) # Coger todas las rutas que pasan por el origen
+	rDestin = getRutasPorCiudad(destino) # Same for el destino
+	
+	for rutaId in rOrigen: # Primero mirar si hay una ruta que pasa por los dos
+		if rutaId in rDestin:
+			ruta = finalrutas[getRutaId(rutaId)] # Existe la ruta directa
+			
+			org = ruta.paradas.index(origen)
+			dst = ruta.paradas.index(destino)
+			
+			if (dst > org):
+				return ruta.ruta[(org + 1):dst]       # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
+			else:
+				return list(reversed(ruta.ruta[(dst + 1):org])) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
+	
+	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa TODO : DO
 	
 	return temp
+
+def getParada(par): # Devuelve la posicion en trayectosActuales[posActual] y el id de la ciudad de una parada par (par es el nombre de la parada)
+	global trayectosActuales, posActual, finalciudades
+	
+	for i in range(len(trayectosActuales[posActual])):
+		if (trayectosActuales[posActual][i][4] == par):
+			nombrePar = trayectosActuales[posActual][i][5].get()
+			for ciudad in finalciudades:
+				if (ciudad.nombre == nombrePar):
+					return [ciudad.id, i] # Devolver la id de la ciudad y su posicion en el array trayectosActuales
+	
+	return None
+
+def getPositions(pos): # Devuelve las posiciones de la parada , la anterior y la posterior en el array rutasActuales[posActual] ; toma como argumento el id de la linea de widgets (length)
+	global rutasActuales, posActual
+	
+	obj = None
+	
+	for i in range(len(trayectosActuales[posActual])):
+		if (trayectosActuales[posActual][i][4] == pos):
+			obj = i
+			break
+	
+	if (obj == None): return None # Sanity check
+	
+	cuenta = -1
+	
+	pre = None
+	n = None
+	pos = None
+	
+	for i in range(len(rutasActuales[posActual])):
+		if (rutasActuales[posActual][i][0] != -1):
+			pre = n
+			n = i
+			
+			cuenta += 1
+		
+		if (cuenta == obj):
+			for j in range(i + 1, len(rutasActuales[posActual])):
+				if (rutasActuales[posActual][j][0] != -1):
+					pos = j
+					return[pre, n, pos]
+	
+	return [pre, n, pos] # Este array devuelve [0] = None si es la primera posicion, [2] = None si es la ultima, y si no es que esta en medio
 
 def beautifyTiempo(txt):
 	return "0" * (4 - len(txt)) + txt # Devuelve la hora con ceros delante
@@ -621,32 +692,93 @@ def elegirCiudad(value):
 	print(value)
 	return None
 
-def quitarParada(par):
-	global trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig
+def dibujarLineaRuta():
+	global canvas, lineaRuta, rutasActuales, posActual
 	
-	pos = -1
+	if (lineaRuta != None): canvas.delete(lineaRuta) # Borrar la linea
+	
+	lineaRuta = None
+	if (len(rutasActuales[posActual]) > 1): lineaRuta = canvas.create_line([ruta[1] for ruta in rutasActuales[posActual]], width = 3, fill = "green")
+
+def actualizarPosibilidades():
+	global root, trayectosActuales, posActual, finalciudades
+	
+	if (len(trayectosActuales[posActual]) == 1):
+		preNombre = trayectosActuales[posActual][0][5].get()
+		
+		trayectosActuales[posActual][0][1]['menu'].delete(0, 'end')
+		
+		ciuds = getCiudades(None, finalciudades[getCiudad(preNombre)].id)
+		
+		for c in ciuds:
+			trayectosActuales[posActual][0][1]['menu'].add_command(label=c)
+		
+		trayectosActuales[posActual][0][5].set(ciuds[ciuds.index(preNombre)])
+		return # Nada más que hacer aquí
+	
+	for i in range(len(trayectosActuales[posActual])):
+		preNombre = trayectosActuales[posActual][i][5].get()
+		
+		ciuds = []
+		
+		trayectosActuales[posActual][i][1]['menu'].delete(0, 'end')
+		
+		if (i == 0): 										ciuds = getCiudades(finalciudades[getCiudad(trayectosActuales[posActual][0][5].get())].id, finalciudades[getCiudad(trayectosActuales[posActual][1][5].get())].id)
+		elif (i == len(trayectosActuales[posActual]) - 1):	ciuds = getCiudades(finalciudades[getCiudad(trayectosActuales[posActual][-1][5].get())].id, finalciudades[getCiudad(trayectosActuales[posActual][-2][5].get())].id)
+		else:
+			ciuds = getCiudades(finalciudades[getCiudad(trayectosActuales[posActual][i][5].get())].id, finalciudades[getCiudad(trayectosActuales[posActual][i - 1][5].get())].id)
+			sig = finalciudades[getCiudad(trayectosActuales[posActual][i + 1][5].get())].nombre
+			if (sig in ciuds): ciuds.remove(sig)
+		
+		for c in ciuds:
+			trayectosActuales[posActual][i][1]['menu'].add_command(label = c, command = lambda vals = [trayectosActuales[posActual][i][4], i, c] : paradaSeleccionada(vals[0], False, vals[1], vals[2]))
+		
+		trayectosActuales[posActual][i][5].set(ciuds[ciuds.index(preNombre)])
+
+def quitarParadaRuta(par): # Par es la "id" de la linea de widgets (4º posicion) ; devuelve la ultima posicion de una parada en rutasActuales[posActual]  ¡¡¡ ATENCION !!! Tambien borra la parada
+	global trayectosActuales, posActual, rutasActuales
+	
+	poss = getPositions(par) # [anterior ; buscamos ; posterior]
+	
+	if (poss[0] == None):	del rutasActuales[posActual][0:poss[2]]            		# Es la primera posicion la que ha sido cambiada
+	elif (poss[2] == None): del rutasActuales[posActual][(poss[0] + 1):]            # Es la ultima posicion la que ha sido cambiada
+	else: 					del rutasActuales[posActual][(poss[0] + 1):poss[2]] 	# Es una posicion intermedia
+	
+	return poss # Devolver todas las posiciones
+
+def quitarParada(par):
+	global trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, rutasActuales
+	
+	parada = getParada(par)
+	
+	if (parada == None): return # Sanity check
+	
+	for i in range(len(trayectosActuales[posActual][parada[1]]) - 2):
+		trayectosActuales[posActual][parada[1]][i].destroy()
 	
 	length = len(trayectosActuales[posActual])
+	dX = [10, 30, 250, 325]
 	
-	for i in range(length):
-		if (trayectosActuales[posActual][i][4] == par):
-			pos = i
-			break
-	
-	if (pos == -1): # Sanity check
-		return
-	
-	for i in range(len(trayectosActuales[posActual][pos]) - 2):
-		trayectosActuales[posActual][pos][i].destroy()
-	
-	dX = [10, 30, 150, 220]
-	
-	for i in range(pos + 1, length):
-		dY = [43 + i*30, 40 + i*30, 45 + i*30, 45 + i*30]
+	for i in range(parada[1] + 1, length):
+		dY = [63 + i*30, 60 + i*30, 65 + i*30, 65 + i*30]
 		for j in range(4):
 			trayectosActuales[posActual][i][j].place(x = dX[j], y = dY[j])
 	
-	del trayectosActuales[posActual][pos]
+	poss = quitarParadaRuta(par)
+	
+	if (poss[0] != None and poss[2] != None): # Recalcular la ruta si la parada que se ha quitado estaba entre medias de otras dos
+		posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], rutasActuales[posActual][poss[0] + 1][0])
+		
+		for i in range(len(posRuta)): # TODO : ESTO PASA DESPUES DE QUITAR PARADA POR LO QUE LAS POSICIONES EN POSS NO SON LAS BUENAS
+			rutasActuales[posActual].insert(poss[0] + 1 + i, [-1, posRuta[i]])
+	
+	del trayectosActuales[posActual][parada[1]]
+	
+	actualizarPosibilidades()
+	
+	dibujarLineaRuta()
+	
+	length -= 1
 	
 	anadirParada.destroy()
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
@@ -659,9 +791,13 @@ def quitarParada(par):
 	trayectoSig.destroy()
 	trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
 	trayectoSig.place(x = 175, y = 95 + length*30)
+	
+	trayectoDel.destroy()
+	trayectoDel = Button(top, text = "Borrar", command = borrarHorario)
+	trayectoDel.place(x = 240, y = 95 + length*30)
 
-def cambiarHorario(dir): # dir es la direccion en la que nos movemos en posActual -1 o +1
-	global top, trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, horarioAct
+def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos movemos en posActual -1 o +1
+	global top, trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, horarioAct, rutasActuales
 	
 	for ruta in trayectosActuales[posActual]: # Esconder los elementos de la ruta que se estaba editando
 		for i in range(4):
@@ -697,20 +833,96 @@ def cambiarHorario(dir): # dir es la direccion en la que nos movemos en posActua
 	else: # Estamos "out of bounds" por lo que hay que crear una nueva posicion
 		if (posActual < 0):
 			posActual = 0
+			rutasActuales.insert(0, [])
 			trayectosActuales.insert(0, [])
 		else:
+			rutasActuales.append([])
 			trayectosActuales.append([])
 		
-		for parada in trayectosActuales[posActual - dir]:
-			addParada(parada[5].get(), parada[2].get("1.0", 'end-1c'), parada[3].get("1.0", 'end-1c')) # Añadir las paradas de la anterior
+		if (copiar):
+			for parada in trayectosActuales[posActual - dir]:
+				addParada(parada[5].get(), parada[2].get("1.0", 'end-1c'), parada[3].get("1.0", 'end-1c')) # Añadir las paradas de la anterior
 	
 	horarioAct.set("Horario " + str(posActual + 1) + '/' + str(len(trayectosActuales)))
+	
+	dibujarLineaRuta()
+
+def borrarHorario():
+	global trayectosActuales, rutasActuales, posActual
+	
+	if (len(trayectosActuales) <= 1): return # Sanity check
+	
+	pre = posActual
+	
+	if (posActual > 0): cambiarHorario(-1)
+	else: cambiarHorario(1)
+	
+	del trayectosActuales[pre]
+	del rutasActuales[pre]
+	
+	cambiarHorario(0)
+
+def paradaSeleccionada(par, nuevo, index = None, value = None): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
+	global finalciudades, trayectosActuales, posActual, rutasActuales
+	
+	if (index != None): trayectosActuales[posActual][index][5].set(value)
+	
+	parada = getParada(par) # Coger [id_ciudad , index_trayectosActuales]
+	
+	posC = getCiudadId(parada[0]) # Posicion de la ciudad en finalciudades
+	
+	if (nuevo):
+		posRuta = getRutaPuntos(finalciudades[getCiudad(trayectosActuales[posActual][parada[1] - 1][5].get())].id, parada[0])
+		
+		if (len(trayectosActuales[posActual]) > 1 and len(posRuta) > 0):
+			for ruta in posRuta:
+				rutasActuales[posActual].append([-1, ruta])
+		
+		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir la posicion de la ciudad que hemos seleccionado con el [id [c_id, [c_x, c_y]]
+	else: # Si estamos aqui es porque se ha modificado una parada ya existente
+		poss = quitarParadaRuta(par)
+		
+		if (poss[0] == None):
+			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
+			
+			rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
+			
+			for i in range(len(posRuta)):	rutasActuales[posActual].insert(1 + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
+		elif (poss[2] == None):
+			posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0])
+			
+			for i in range(len(posRuta)):	rutasActuales[posActual].insert(poss[1] + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
+			
+			rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
+		else:
+			preRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0]) # Desde el punto anterior hasta la nueva parada
+			
+			finPos = poss[0] + 1 # Posicion donde se tiene que insertar
+			
+			for i in range(len(preRuta)):
+				rutasActuales[posActual].insert(finPos, [-1, preRuta[i]])
+				finPos += 1
+			
+			rutasActuales[posActual].insert(finPos, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
+			finPos += 1
+			
+			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
+			
+			for i in range(len(posRuta)):
+				rutasActuales[posActual].insert(finPos, [-1, posRuta[i]])
+				finPos += 1
+		
+		actualizarPosibilidades() # Actualizar las paradas que se pueden elegir
+	
+	dibujarLineaRuta()
 
 def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada al horario actual (posActual)
-	global top, anadirParada, trayectosActuales, posActual, trayectoAnt, trayectoSig
+	global top, anadirParada, trayectosActuales, posActual, trayectoAnt, trayectoSig, trayectoDel
 	
-	if (len(trayectosActuales[posActual]) > 0): ciuds = getCiudades(finalciudades[getCiudad(trayectosActuales[posActual][-1][5].get())].id)
-	else: ciuds = getCiudades(None)
+	if (len(trayectosActuales[posActual]) > 0):
+		idAnterior = finalciudades[getCiudad(trayectosActuales[posActual][-1][5].get())].id
+		ciuds = getCiudades(idAnterior, idAnterior)
+	else: ciuds = getCiudades(None, None)
 	
 	ciud = StringVar()
 	
@@ -722,16 +934,25 @@ def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada 
 	dX = [10, 30, 250, 325]
 	dY = [93 + length*30, 90 + length*30, 95 + length*30, 95 + length*30]
 	
+	posId = length
+	
+	while (posId in [tray[4] for tray in trayectosActuales[posActual]]):
+		posId += 1
+	
 	trayectosActuales[posActual].append([]) # Crear una nueva parada
 	
 	# Añadir elementos
 	
-	trayectosActuales[posActual][-1].append(Button(top, text = "X", command = lambda a = length : quitarParada(a)))
-	trayectosActuales[posActual][-1].append(OptionMenu(top, ciud, *ciuds))
+	trayectosActuales[posActual][-1].append(Button(top, text = "X", command = lambda a = posId : quitarParada(a)))
+	trayectosActuales[posActual][-1].append(OptionMenu(top, ciud, *ciuds, command = lambda _ : paradaSeleccionada(posId, False)))
 	trayectosActuales[posActual][-1].append(Text(top, heigh = 1, width = 4))
 	trayectosActuales[posActual][-1].append(Text(top, heigh = 1, width = 4))
-	trayectosActuales[posActual][-1].append(length)
+	trayectosActuales[posActual][-1].append(posId)
 	trayectosActuales[posActual][-1].append(ciud)
+	
+	paradaSeleccionada(posId, True) # Llamar que se ha seleccionado una parada en cuanto se crea una nueva parada
+	
+	actualizarPosibilidades()
 	
 	for i in range(4): # Mover todo a la posicion que le corresponde
 		trayectosActuales[posActual][-1][i].place(x = dX[i], y = dY[i])
@@ -747,6 +968,7 @@ def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada 
 		anadirParada.destroy()
 		trayectoAnt.destroy()
 		trayectoSig.destroy()
+		trayectoDel.destroy()
 	
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
 	anadirParada.place(x = 10, y = 125 + length*30)
@@ -757,17 +979,23 @@ def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada 
 	trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
 	trayectoSig.place(x = 175, y = 125 + length*30)
 	
+	trayectoDel = Button(top, text = "Borrar", command = borrarHorario)
+	trayectoDel.place(x = 240, y = 125 + length*30)
 
 def nuevoTren():
-	global top, finalciudades, nombreLin, idT, trayectosActuales, posActual, horarioAct
+	global top, finalciudades, nombreLin, idT, trayectosActuales, posActual, horarioAct, rutasActuales, canvas, lineaRuta
 	
 	for i in range(len(trayectosActuales)): # Resetear por si se estaba haciendo una ruta y se pincha en nueva otra vez
 		if (len(trayectosActuales[i]) == 0): continue
 		for j in range(4):
 			trayectosActuales[i][j].destroy()
 	
+	if (lineaRuta != None): canvas.delete(lineaRuta)
+	
 	posActual = 0
 	trayectosActuales = [[]]
+	rutasActuales = [[]]
+	lineaRuta = None
 	
 	horarioAct.set("Horario " + str(posActual + 1) + '/' + str(len(trayectosActuales)))
 	
@@ -780,7 +1008,7 @@ def nuevoTren():
 	addParada()
 	
 def trenElegido(value):
-	global top, trayectosActuales, posActual, finaltrenes, nombreLin
+	global top, trayectosActuales, posActual, finaltrenes, finalciudades, nombreLin, rutasActuales, canvas, lineaRuta
 	
 	pos = getTren(value)
 	
@@ -788,21 +1016,33 @@ def trenElegido(value):
 		for j in range(4):
 			trayectosActuales[i][j].destroy()
 	
+	if (lineaRuta != None): canvas.delete(lineaRuta)
+	
 	posActual = 0
 	trayectosActuales = [[]]
+	rutasActuales = [[]]
+	lineaRuta = None
 	
 	if (nombreLin == None): nombreLin = Text(top, height = 1, width = 15)
 	nombreLin.place(x = 175, y = 50)
 	nombreLin.insert(END, value)
 	nombreLin.focus()
 	
-	for i in range(finaltrenes[pos].paradas): # TODO : ACTUALIZAR LOL
-		addParada(finaltrenes[pos].paradas[i], finaltrenes[pos].llegadas[i], finaltrenes[pos].salidas[i])
+	for i in range(len(finaltrenes[pos].trayectos)):
+		
+		for j in range(len(finaltrenes[pos].trayectos[i][0])):
+			print(j)
+			addParada(finalciudades[getCiudadId(finaltrenes[pos].trayectos[i][0][j])].nombre, finaltrenes[pos].trayectos[i][2][j], finaltrenes[pos].trayectos[i][3][j])
+		
+		cambiarHorario(1, False)
 	
-	print(value)
+	borrarHorario()
+	
+	for ruta in finaltrenes[pos].trayectos:
+		rutasActuales.append(ruta[1])
 
 def guardarTren(event = None):
-	global idT, finaltrenes, finalciudades, trayectosActuales, nombreLin
+	global idT, finaltrenes, finalciudades, trayectosActuales, nombreLin, rutasActuales
 	
 	if (len(trayectosActuales) < 1): return # Check : la ruta tiene más de una parada
 	
@@ -811,29 +1051,35 @@ def guardarTren(event = None):
 			print("Hay al menos un horario invalido")
 			return # Si hay al menos una ruta con menos de 2 paradas, no se puede guardar visto que no es una ruta valida
 	
-	for t in finaltrenes: # Check : nombre nuevo
-		if (t.nombre == nombreLin.get("1.0",'end-1c')):
-			print("El nombre del tren ya existe")
-			return
-	
 	for ruta in trayectosActuales:
 		for i in range(len(ruta)):
 			if (not checkTiempo(ruta[i][2].get("1.0", "end-1c")) or (not checkTiempo(ruta[i][3].get("1.0", "end-1c"))) or (int(ruta[i][2].get("1.0", "end-1c")) >= int(ruta[i][3].get("1.0", "end-1c"))) or (i > 0 and int(ruta[i - 1][3].get("1.0", "end-1c")) >= int(ruta[i][2].get("1.0", "end-1c")))): # Check primero que el formato de tiempo de cada tiempo individual sea correcto, despues mirar que la salida sea despues de la llegada, despues mirar que la llegada a la proxima parada no sea antes que la salida
 				print("Hora incorrecta")
 				return
-		
-	temptrayecto = [[finalciudades[getCiudad(c[5].get())].id for c in rutaActual], [],[c[2].get("1.0", "end-1c") for c in rutaActual], [c[3].get("1.0", "end-1c") for c in rutaActual]] # TODO : CALC RUTA LOL
 	
-	finaltrenes.append(Tren(idT, nombreLin.get("1.0",'end-1c'), temptrayecto))
+	temptrayecto = []
+	
+	for tray in range(len(trayectosActuales)):
+		temptrayecto.append([[finalciudades[getCiudad(c[5].get())].id for c in trayectosActuales[tray]], [c[2].get("1.0", 'end-1c') for c in trayectosActuales[tray]], [c[3].get("1.0", 'end-1c') for c in trayectosActuales[tray]]])
+		
+		temptrayecto[tray].insert(1, [ruta for ruta in rutasActuales[tray]])
+	
+	posT = getTren(nombreLin.get("1.0", 'end-1c')) # Si el nombre existe, se sobreescribe, sino, se crea uno nuevo
+	
+	if (posT != None): finaltrenes[posT] = Tren(finaltrenes[posT].id, nombreLin.get("1.0",'end-1c'), copy.deepcopy(temptrayecto))
+	else: finaltrenes.append(Tren(idT, nombreLin.get("1.0", 'end-1c'), copy.deepcopy(temptrayecto)))
+	
+	print("Línea " + nombreLin.get("1.0", 'end-1c') + " guardada")
 	
 	generarIdTren()
 	
 	escribirTrenes()
 	
-	print("Línea de tren guardada")
-
+	cancelarTren()
+	crearLineaTren()
+	
 def cancelarTren(evenet = None): # Llamar cuando se cierre la ventana, asi se cancelan los cambios y se resetea todo
-	global top, nombreLin, anadirParada, trayectosActuales, posActual
+	global top, nombreLin, anadirParada, trayectosActuales, posActual, rutasActuales, canvas, lineaRuta, trayectoAnt, trayectoSig, trayectoDel
 	
 	top.destroy()
 	
@@ -842,19 +1088,24 @@ def cancelarTren(evenet = None): # Llamar cuando se cierre la ventana, asi se ca
 			for i in range(4):
 				linea[i].destroy() # Destruir los items que se han creado
 	
+	if (lineaRuta != None): canvas.delete(lineaRuta)
 	
 	posActual = 0
 	trayectosActuales = [[]] # Vaciar el array
+	rutasActuales = [[]]
+	lineaRuta = None
 	
 	top = None
 	nombreLin = None
 	anadirParada = None
+	horarioAct = None
+	
 	trayectoAnt = None
 	trayectoSig = None
-	horarioAct = None
+	trayectoDel = None
 
 def crearLineaTren(): # Se llama cuando se da a la T, crea la ventana y pone el editor en modo crear trenes
-	global finaltrenes, top, trayectosActuales, posActual, horarioAct
+	global finaltrenes, top, trayectosActuales, posActual, horarioAct, rutasActuales, lineaRuta
 	
 	top = Toplevel()
 	
@@ -868,10 +1119,12 @@ def crearLineaTren(): # Se llama cuando se da a la T, crea la ventana y pone el 
 	lin = StringVar()
 	
 	lin.set("Selecciona una línea")
-	if (len(lins) > 0): OptionMenu(top, lin, *lins, command = trenElegido).place(x = 150, y = 50) # TODO : CREO QUE ESTO NO DETECTA QUE TREN HA SIDO ELEGIDO LOL
+	if (len(lins) > 0): OptionMenu(top, lin, *lins, command = trenElegido).place(x = 100, y = 50) # TODO : ELIMINAR CUANDO SE SELECCIONE
 	
 	posActual = 0
 	trayectosActuales = [[]]
+	rutasActuales = [[]]
+	lineaRuta = None
 	
 	horarioAct = StringVar()
 	horarioAct.set("")
@@ -900,7 +1153,7 @@ def escribirCiudades():
 	global finalciudades
 	
 	with open(ciudadesF, "w+") as f:
-		json.dump([c.__dict__ for c in finalciudades], f, indent=4)
+		json.dump([c.__dict__ for c in finalciudades], f, indent = 4)
 		f.close()
 	print(len(finalciudades), "ciudades guardadas")
 
@@ -908,7 +1161,7 @@ def escribirRutas():
 	global finalrutas
 	
 	with open(rutasF, "w+") as f:
-		json.dump([r.__dict__ for r in finalrutas], f, indent=4)
+		json.dump([r.__dict__ for r in finalrutas], f, indent = 4)
 		f.close()
 	
 	print(len(finalrutas), "rutas guardadas")
@@ -917,7 +1170,7 @@ def escribirTrenes():
 	global finaltrenes
 	
 	with open(trenesF, "w+") as f:
-		json.dump([t.__dict__ for t in finaltrenes], f, indent=4)
+		json.dump([t.__dict__ for t in finaltrenes], f, indent = 4)
 		f.close()
 	
 	print(len(finaltrenes), " trenes guardados")
@@ -1016,7 +1269,7 @@ def cargarTrenes():
 	data = json.loads(f.read())
 	
 	for i in data: # Meter trenes en la lista
-		finaltrenes.append(Tren(i['id'], i['nombre'], i['ruta'], i['paradas'], i['horarios']))
+		finaltrenes.append(Tren(i['id'], i['nombre'], i['trayectos']))
 	
 	f.close()
 	

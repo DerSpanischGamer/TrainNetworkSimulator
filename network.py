@@ -102,6 +102,11 @@ def diferenciaHoras(h0, h1): # Devuelve la diferencia en minutos [ h1 > h0 ]
 	
 	return hora2mins(h1) - hora2mins(h0)
 
+def dibujarReloj(x, y):  # x, y son el centro del reloj
+	global draw, horaAct
+
+	draw.ellipse()
+
 def actualizarTrenes():
 	global finaltrenes, trenes, horaAct
 	

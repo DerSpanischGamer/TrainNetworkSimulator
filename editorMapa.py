@@ -11,9 +11,9 @@ import math
 import json
 from tkinter import *
 from tkinter import messagebox
+from PIL import Image, ImageTk
 from tkinter.constants import *
 from tkinter import colorchooser
-from PIL import Image, ImageTk
 
 # --------- VARIABLES ---------
 
@@ -53,6 +53,10 @@ finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el
 
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
 rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
+
+posTop = None # Ventana donde se va a mostrar el OptionMenu con todas las opciones
+lineaTemp = None # La linea que se ha seleccionado
+posiblesRutas = [] # Rutas propuestas entre dos puntos para el trayecto de un tren (solo contienen las posiciones de cada punto de la linea)
 
 idR = -1 # Id para la proxima ruta
 idC = -1 # Id para la proxima ciudad
@@ -295,8 +299,42 @@ def getCiudades(idC, idQ): # Devuelve la lista de todas las ciudades disponibles
 	
 	return [finalciudades[getCiudadId(c)].nombre for c in after] # Quitar la ciudad que se nos ha dado
 
+def mostrarRuta(pos):
+	global canvas, lineaTemp, posiblesRutas
+	
+	if (lineaTemp != None): canvas.delete(lineaTemp)
+	
+	lineaTemp = canvas.draw_line(posiblesRutas[pos])
+
+def mostrarRutas():
+	global posTop, posiblesRutas, esperarInput
+	
+	posTop = Toplevel()
+	
+	posTop.geometry("200x300")
+	posTop.title("Selecciona ruta")
+	posTop.resizable(False, False)
+	
+	pos = StringVar()
+	poss = ["Ruta " + str(i) for i in range(len(posiblesRutas))]
+	
+	pos.set(poss[0])
+	
+	menu = OptionMenu(posTop, pos, *poss)
+	menu.pack()
+	for i in range(len(posiblesRutas)):
+		menu["menu"].add_command(label = str(i), command = lambda a = i : mostrar(a))
+	
+	esperarInput = True
+	
+	Button(posTop, text = "", command = lambda : aceptarRuta()).pack()
+	
+	return None
+
 def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino
-	global finalrutas, finalciudades
+	global finalrutas, finalciudades, posiblesRutas
+	
+	if (origen == destino): return
 	
 	rOrigen = getRutasPorCiudad(origen) 	# Coger todas las rutas que pasan por el origen
 	rDestin = getRutasPorCiudad(destino) 	# Same for el destino
@@ -316,11 +354,13 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 				posiblesRutas.append(list(reversed(ruta.ruta[dst:org]))) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
 	
 	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa
-	for rutaId in rOrigen: # Este algoritmo hace un brute force de 
+	for rutaId in rOrigen: # TODO : generalizar a que busque n paradas intermediarias maximas
 		rutaOr = finalrutas[getRutaId(rutaId)]
 		
 		for destId in rDestin:
 			rutaDe = finalrutas[getRutaId(destId)]
+			
+			if (destId in rOrigen): continue
 			
 			for parada in rutaOr.paradas:
 				if (parada == -1): continue
@@ -341,8 +381,11 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					
 					posiblesRutas.append(temp)
 	
-	if (len(posiblesRutas) > 1): # TODO : COMO GESTIONAR CUANDO HAY VARIAS RUTAS POSIBLES
-		return posiblesRutas[0]
+	for r in posiblesRutas:
+		print(r)
+	
+	if (len(posiblesRutas) > 1): # TODO : AQUI ES DONDE HAY QUE PROPONER LAS PROPUESTAS
+		return [-1] # Devolver -1 para indicar que hay varias opciones
 	elif (len(posiblesRutas) == 1):
 		return posiblesRutas[0]
 	else:
@@ -890,7 +933,9 @@ def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos move
 		
 		if (copiar):
 			for parada in trayectosActuales[posActual - dir]:
-				addParada(parada[5].get(), parada[2].get("1.0", 'end-1c'), parada[3].get("1.0", 'end-1c')) # Añadir las paradas de la anterior
+				addParada(parada[5].get(), parada[2].get("1.0", 'end-1c'), parada[3].get("1.0", 'end-1c'), True) # Añadir las paradas de la anterior
+			
+			rutasActuales[posActual] = rutasActuales[posActual - dir]
 	
 	horarioAct.set("Horario " + str(posActual + 1) + '/' + str(len(trayectosActuales)))
 	
@@ -911,8 +956,12 @@ def borrarHorario():
 	
 	cambiarHorario(0)
 
-def paradaSeleccionada(par, nuevo, index = None, value = None): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
+def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
 	global finalciudades, trayectosActuales, posActual, rutasActuales
+	
+	if (auto):
+		actualizarPosibilidades()
+		return
 	
 	if (index != None): trayectosActuales[posActual][index][5].set(value)
 	
@@ -961,14 +1010,13 @@ def paradaSeleccionada(par, nuevo, index = None, value = None): # Se llama cada 
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
 			for i in range(len(posRuta)):
-				rutasActuales[posActual].insert(finPos, [-1, posRuta[i]])
-				finPos += 1
+				rutasActuales[posActual].insert(finPos + i, [-1, posRuta[i]])
 		
 		actualizarPosibilidades() # Actualizar las paradas que se pueden elegir
 	
 	dibujarLineaRuta()
 
-def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada al horario actual (posActual)
+def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Añadir una parada al horario actual (posActual)
 	global root, top, anadirParada, trayectosActuales, posActual, trayectoAnt, trayectoSig, trayectoDel
 	
 	if (len(trayectosActuales[posActual]) > 0):
@@ -1006,7 +1054,7 @@ def addParada(pos = "None", lleg = "0000", sali = "0005"): # Añadir una parada 
 	trayectosActuales[posActual][-1].append(posId)
 	trayectosActuales[posActual][-1].append(ciud)
 	
-	paradaSeleccionada(posId, True) # Llamar que se ha seleccionado una parada en cuanto se crea una nueva parada
+	paradaSeleccionada(posId, True, auto = autoV) # Llamar que se ha seleccionado una parada en cuanto se crea una nueva parada
 	actualizarPosibilidades()
 	
 	for i in range(4): # Mover todo a la posicion que le corresponde
@@ -1095,9 +1143,12 @@ def trenElegido(value):
 	
 	for i in range(len(finaltrenes[pos].trayectos)):
 		for j in range(len(finaltrenes[pos].trayectos[i][0])):
-			addParada(finalciudades[getCiudadId(finaltrenes[pos].trayectos[i][0][j])].nombre, finaltrenes[pos].trayectos[i][2][j], finaltrenes[pos].trayectos[i][3][j])
+			addParada(finalciudades[getCiudadId(finaltrenes[pos].trayectos[i][0][j])].nombre, finaltrenes[pos].trayectos[i][2][j], finaltrenes[pos].trayectos[i][3][j], True)
 		
-		cambiarHorario(1, False)
+		rutasActuales[posActual] = finaltrenes[pos].trayectos[i][1]
+		dibujarLineaRuta()
+		
+		if (i != len(finaltrenes[pos].trayectos) - 1): cambiarHorario(1, False)
 	
 	borrarHorario()
 	

@@ -4,7 +4,7 @@
 
 # IMPORTANTE : ¡¡¡ EMPEZAR A CREAR LAS LINEAS DE TRENES UNA VEZ QUE LAS RUTAS Y LAS ESTACIONES ESTÉN ACABADAS !!!
 
-# TODO : PROPONER RUTAS NO DIRECTAS
+# TODO : GENERALIZAR A n BUSQUEDAS
 
 import copy
 import math
@@ -51,12 +51,17 @@ posActual = 0 # Que trayecto se esta modificando
 trayectosActuales = [[]] # Guarda todos los horarios que puede tener un tren [ columna1 ; columna2 ; ... ; columnnan]
 finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el json
 
+selec = None # Ventana donde se selecciona una de las rutas
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
+rutaSelect = None # OptionMenu para seleccionar la ruta
 rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
+tipo = 0 # Continue el tipo de parada que es : 0 = primera parada ; 1 = entre dos paradas ;  2 = ultima parada
 posTop = None # Ventana donde se va a mostrar el OptionMenu con todas las opciones
 lineaTemp = None # La linea que se ha seleccionado
 posiblesRutas = [] # Rutas propuestas entre dos puntos para el trayecto de un tren (solo contienen las posiciones de cada punto de la linea)
+puntoDivergencia = [] # Donde se separa la ruta
+lineaTemp = None # Linea que muestra la ruta qeu se ha seleccionado
 
 idR = -1 # Id para la proxima ruta
 idC = -1 # Id para la proxima ciudad
@@ -332,18 +337,21 @@ def mostrarRutas():
 	return None
 
 def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino
-	global finalrutas, finalciudades, posiblesRutas
+	global finalrutas, finalciudades, posiblesRutas, puntoDivergencia
 	
 	if (origen == destino): return
 	
 	rOrigen = getRutasPorCiudad(origen) 	# Coger todas las rutas que pasan por el origen
 	rDestin = getRutasPorCiudad(destino) 	# Same for el destino
 	
-	posiblesRutas = [] # Todas las rutas que se puden tomar
+	posiblesRutas.clear() # Todas las rutas que se puden tomar
+	puntoDivergencia.clear()
 	
 	for rutaId in rOrigen: # Primero mirar si hay una ruta que pasa por los dos
 		if rutaId in rDestin:
 			ruta = finalrutas[getRutaId(rutaId)] # Existe la ruta directa
+			
+			print("Ruta directa encontrada", origen, destino)
 			
 			org = ruta.paradas.index(origen)
 			dst = ruta.paradas.index(destino)
@@ -352,6 +360,8 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 				posiblesRutas.append(ruta.ruta[(org + 1):dst])       # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
 			else:
 				posiblesRutas.append(list(reversed(ruta.ruta[dst:org]))) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
+			
+			puntoDivergencia.append("Directo")
 	
 	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa
 	for rutaId in rOrigen: # TODO : generalizar a que busque n paradas intermediarias maximas
@@ -373,21 +383,19 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					
 					temp = []
 					
-					if (vi1 > org):	temp.append(rutaOr.ruta[(org + 1):vi1])
-					else:			temp.append(list(reversed(rutaOr.ruta[vi1:org])))
+					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[org:(vi1 + 1)]]
+					else:			[temp.append(r) for r in list(reversed(rutaOr.ruta[vi1:(org + 1)]))]
 					
-					if (vi2 > dst): temp.append(rutaDe.ruta[(vi2 + 1):dst])
-					else:			temp.append(list(reversed(rutaDe.ruta[dst:(vi2 - 1)])))
+					if (vi2 > dst): [temp.append(r) for r in list(reversed(rutaDe.ruta[dst:(vi2 + 1)]))]
+					else:			[temp.append(r) for r in rutaDe.ruta[(vi2 + 1):(dst + 1)]]
 					
+					print(temp)
+					
+					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre)
 					posiblesRutas.append(temp)
 	
-	for r in posiblesRutas:
-		print(r)
-	
-	if (len(posiblesRutas) > 1): # TODO : AQUI ES DONDE HAY QUE PROPONER LAS PROPUESTAS
-		return [-1] # Devolver -1 para indicar que hay varias opciones
-	elif (len(posiblesRutas) == 1):
-		return posiblesRutas[0]
+	if (len(posiblesRutas) >= 1):
+		return posiblesRutas # Devolver posiblesRutas y despues que se decida mas tarde
 	else:
 		return None # Devolver None para indicar que no hay ruta entre las ciudades
 
@@ -789,7 +797,6 @@ def dibujarLineaRuta():
 	
 	if (lineaRuta != None): canvas.delete(lineaRuta) # Borrar la linea
 	
-	lineaRuta = None
 	if (len(rutasActuales[posActual]) > 1): lineaRuta = canvas.create_line([ruta[1] for ruta in rutasActuales[posActual]], width = 3, fill = "green")
 
 def actualizarPosibilidades():
@@ -956,10 +963,57 @@ def borrarHorario():
 	
 	cambiarHorario(0)
 
+def cerrarPosiblesRutas():
+	global selec, rutaSelect
+	
+	rutaSelect.destroy()
+	selec.destroy()
+	
+	rutaSelect = None
+	selec = None
+
+def colorearLinea(value):
+	global canvas, posiblesRutas, puntoDivergencia, lineaTemp
+	
+	if (lineaTemp != None): canvas.delete(lineaTemp) # Borrar linea
+	
+	lineaTemp = canvas.create_line(posiblesRutas[puntoDivergencia.index(value)], width = 3, fill = "yellow")
+
+def mostrarPosiblesRutas():
+	global selec, rutaSelect, posiblesRutas, puntoDivergencia
+	
+	selec = Toplevel()
+	
+	print(len(posiblesRutas))
+	
+	selec.geometry("200x200")
+	selec.title("Selecciona una ruta")
+	selec.resizable(False, False)
+	
+	Button(selec, text = "Aceptar", command = lambda _ : seleccionarOpcion(posiblesRutas[0])) # TODO : elegir ruta
+	
+	posRts = StringVar()
+	posRts.set(puntoDivergencia[0])
+	
+	selecLn = OptionMenu(selec, posRts, *puntoDivergencia, command = colorearLinea)
+	selecLn.place(x = 100, y = 50)
+	
+	colorearLinea(puntoDivergencia[0]) # Divujar la primera ruta
+
+def seleccionarOpcion(ruta): # Cuando se selecciona una 
+	global tipo, posActual, rutasActuales, rutaSelect
+	
+	if (tipo == 0):
+		print("0")
+	elif (tipo == 1):
+		print("1")
+	else:
+		print ("2")
+
 def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
 	global finalciudades, trayectosActuales, posActual, rutasActuales
 	
-	if (auto):
+	if (auto): # Si la parada ha sido generada automaticamente cuando se carga una linea de tren generada previamente, no hay que crear una ruta
 		actualizarPosibilidades()
 		return
 	
@@ -986,11 +1040,25 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		if (poss[0] == None):
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
+			if (len(posRuta) > 1):
+				tipo = 0
+				mostrarPosiblesRutas()
+				return
+			
+			posRuta = posRuta[0]
+			
 			rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
 			
 			for i in range(len(posRuta)):	rutasActuales[posActual].insert(1 + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
 		elif (poss[2] == None):
 			posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0])
+			
+			if (len(posRuta) > 1):
+				tipo = 2
+				mostrarPosiblesRutas()
+				return
+			
+			posRuta = posRuta[0]
 			
 			for i in range(len(posRuta)):	rutasActuales[posActual].insert(poss[1] + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
 			
@@ -1224,6 +1292,8 @@ def cancelarTren(evenet = None): # Llamar cuando se cierre la ventana, asi se ca
 
 def crearLineaTren(): # Se llama cuando se da a la T, crea la ventana y pone el editor en modo crear trenes
 	global finaltrenes, top, trayectosActuales, posActual, horarioAct, rutasActuales, lineaRuta, selecLn
+	
+	if (top != None): cancelarCiudad()
 	
 	top = Toplevel()
 	

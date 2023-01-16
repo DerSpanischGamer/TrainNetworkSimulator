@@ -4,7 +4,10 @@
 
 # IMPORTANTE : ¡¡¡ EMPEZAR A CREAR LAS LINEAS DE TRENES UNA VEZ QUE LAS RUTAS Y LAS ESTACIONES ESTÉN ACABADAS !!!
 
-# TODO : GENERALIZAR A n BUSQUEDAS
+# ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA
+# ERROR : CUANDO HAY MULTIPLES RUTAS, SE ANULA Y DESPUES SE SELECCIONA UNA PARADA
+# TODO : ACABAR DE IMPLEMENTAR ELEGIR MULTIPLES RUTAS (flemme lol)
+# TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL
 
 import copy
 import math
@@ -14,6 +17,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from tkinter.constants import *
 from tkinter import colorchooser
+from json.decoder import JSONDecodeError
 
 # --------- VARIABLES ---------
 
@@ -54,6 +58,7 @@ finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el
 selec = None # Ventana donde se selecciona una de las rutas
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
 rutaSelect = None # OptionMenu para seleccionar la ruta
+proponerAlt = False # Proponer una ruta inderecta si se ha encontrado una ruta directa
 rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
 tipo = 0 # Continue el tipo de parada que es : 0 = primera parada ; 1 = entre dos paradas ;  2 = ultima parada
@@ -62,6 +67,7 @@ lineaTemp = None # La linea que se ha seleccionado
 posiblesRutas = [] # Rutas propuestas entre dos puntos para el trayecto de un tren (solo contienen las posiciones de cada punto de la linea)
 puntoDivergencia = [] # Donde se separa la ruta
 lineaTemp = None # Linea que muestra la ruta qeu se ha seleccionado
+posibSelec = None # La opcion que se ha seleccionado
 
 idR = -1 # Id para la proxima ruta
 idC = -1 # Id para la proxima ciudad
@@ -179,23 +185,25 @@ def distancia(pos0, pos1): # Distancia entre dos puntos
 	return math.sqrt( (pos0[0] - pos1[0])**2 + (pos0[1] - pos1[1])**2 )
 
 def distPointLine(P0, P1, P2): # P0 es el punto, P1 y P2 son las extremidades del segmento de linea
-    px = P2[0] - P1[0]
-    py = P2[1] - P1[1]
-
-    norm = px**2 + py**2
-
-    u =  ((P0[0] - P1[0]) * px + (P0[1] - P1[1]) * py) / float(norm)
-
-    if u > 1: u = 1
-    elif u < 0: u = 0
-
-    x = P1[0] + u * px
-    y = P1[1] + u * py
-
-    dx = x - P0[0]
-    dy = y - P0[1]
-
-    return math.sqrt(dx*dx + dy*dy)
+	px = P2[0] - P1[0]
+	py = P2[1] - P1[1]
+	
+	if (px == 0 and py == 0): return 0
+	
+	norm = px**2 + py**2
+	
+	u =  ((P0[0] - P1[0]) * px + (P0[1] - P1[1]) * py) / float(norm)
+	
+	if u > 1: u = 1
+	elif u < 0: u = 0
+	
+	x = P1[0] + u * px
+	y = P1[1] + u * py
+	
+	dx = x - P0[0]
+	dy = y - P0[1]
+	
+	return math.sqrt(dx*dx + dy*dy)
 
 def setModo(modo): # 1 = CIUDADES ; 2 = RUTAS ; 3 = TREN
 	global texto, ciudad, linea, top, moviendo, moviendoC
@@ -336,7 +344,7 @@ def mostrarRutas():
 	
 	return None
 
-def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino
+def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino TODO : REHACER PARA QUE SEA RECURSIVO
 	global finalrutas, finalciudades, posiblesRutas, puntoDivergencia
 	
 	if (origen == destino): return
@@ -351,8 +359,6 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 		if rutaId in rDestin:
 			ruta = finalrutas[getRutaId(rutaId)] # Existe la ruta directa
 			
-			print("Ruta directa encontrada", origen, destino)
-			
 			org = ruta.paradas.index(origen)
 			dst = ruta.paradas.index(destino)
 			
@@ -363,8 +369,10 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 			
 			puntoDivergencia.append("Directo")
 	
+	if (len(posiblesRutas) == 1 and not proponerAlt): return posiblesRutas
+	
 	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa
-	for rutaId in rOrigen: # TODO : generalizar a que busque n paradas intermediarias maximas
+	for rutaId in rOrigen:
 		rutaOr = finalrutas[getRutaId(rutaId)]
 		
 		for destId in rDestin:
@@ -388,8 +396,6 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					
 					if (vi2 > dst): [temp.append(r) for r in list(reversed(rutaDe.ruta[dst:(vi2 + 1)]))]
 					else:			[temp.append(r) for r in rutaDe.ruta[(vi2 + 1):(dst + 1)]]
-					
-					print(temp)
 					
 					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre)
 					posiblesRutas.append(temp)
@@ -973,42 +979,64 @@ def cerrarPosiblesRutas():
 	selec = None
 
 def colorearLinea(value):
-	global canvas, posiblesRutas, puntoDivergencia, lineaTemp
+	global canvas, posiblesRutas, puntoDivergencia, lineaTemp, posibSelec
 	
 	if (lineaTemp != None): canvas.delete(lineaTemp) # Borrar linea
 	
-	lineaTemp = canvas.create_line(posiblesRutas[puntoDivergencia.index(value)], width = 3, fill = "yellow")
+	posibSelec = puntoDivergencia.index(value)
+	lineaTemp = canvas.create_line(posiblesRutas[posibSelec], width = 3, fill = "yellow")
 
-def mostrarPosiblesRutas():
-	global selec, rutaSelect, posiblesRutas, puntoDivergencia
+def posibilidadesCerrar(cancelar = True):
+	global canvas, selec, selecLn, lineaTemp, trayectosActuales, posActual
+	
+	if (cancelar):
+		quitarParada(trayectosActuales[posActual][-1][4])
+	
+	selec.destroy()
+	
+	selec = None
+	selecLn = None
+	
+	canvas.delete(lineaTemp)
+	lineaTemp = None
+	posibSelec = None
+
+def mostrarPosiblesRutas(t):
+	global selec, rutaSelect, posiblesRutas, puntoDivergencia, tipo
+	
+	tipo = t
 	
 	selec = Toplevel()
-	
-	print(len(posiblesRutas))
 	
 	selec.geometry("200x200")
 	selec.title("Selecciona una ruta")
 	selec.resizable(False, False)
+	selec.protocol("WM_DELETE_WINDOW", posibilidadesCerrar) # Llamar funcion cuando se cierre el Toplevel
 	
-	Button(selec, text = "Aceptar", command = lambda _ : seleccionarOpcion(posiblesRutas[0])) # TODO : elegir ruta
+	Label(selec, text = "Elige una ruta").place(x = 50, y = 20)
+	Button(selec, text = "Aceptar", command = seleccionarOpcion).place(x = 50, y = 100)
 	
 	posRts = StringVar()
 	posRts.set(puntoDivergencia[0])
 	
 	selecLn = OptionMenu(selec, posRts, *puntoDivergencia, command = colorearLinea)
-	selecLn.place(x = 100, y = 50)
+	selecLn.place(x = 50, y = 50)
 	
-	colorearLinea(puntoDivergencia[0]) # Divujar la primera ruta
+	colorearLinea(puntoDivergencia[0]) # Dibujar la primera ruta cause why fucking not
 
 def seleccionarOpcion(ruta): # Cuando se selecciona una 
-	global tipo, posActual, rutasActuales, rutaSelect
+	global tipo, posActual, rutasActuales, rutaSelect, posibSelec, posiblesRutas
 	
 	if (tipo == 0):
-		print("0")
+		rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
+		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(1 + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
 	elif (tipo == 1):
 		print("1")
 	else:
-		print ("2")
+		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(poss[1] + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
+		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
+	
+	posibilidadesCerrar(False)
 
 def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
 	global finalciudades, trayectosActuales, posActual, rutasActuales
@@ -1038,11 +1066,11 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		poss = quitarParadaRuta(par)
 		
 		if (poss[0] == None):
+			print(trayectosActuales[posActual][parada[1] + 1][0])
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
 			if (len(posRuta) > 1):
-				tipo = 0
-				mostrarPosiblesRutas()
+				mostrarPosiblesRutas(0)
 				return
 			
 			posRuta = posRuta[0]
@@ -1054,8 +1082,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0])
 			
 			if (len(posRuta) > 1):
-				tipo = 2
-				mostrarPosiblesRutas()
+				mostrarPosiblesRutas(2)
 				return
 			
 			posRuta = posRuta[0]
@@ -1399,16 +1426,19 @@ def cargarCiudades():
 	
 	print("Cargando ciudades")
 	
-	f = open(ciudadesF, 'r')
-	data = json.loads(f.read())
-	
-	for i in data: # Dibujar ciudades
-		temp = Ciudad(i['id'], i['nombre'], i['x'], i['y'])
-		finalciudades.append(temp)
+	try:
+		f = open(ciudadesF, 'r')
+		data = json.loads(f.read())
 		
-		ciudades.append(CiudadDibujada(temp, canvas.create_rectangle(i['x'] - 2, i['y'] - 2, i['x'] + 2, i['y'] + 2, fill="red", activefill="cyan")))
-	
-	f.close()
+		for i in data: # Dibujar ciudades
+			temp = Ciudad(i['id'], i['nombre'], i['x'], i['y'])
+			finalciudades.append(temp)
+			
+			ciudades.append(CiudadDibujada(temp, canvas.create_rectangle(i['x'] - 2, i['y'] - 2, i['x'] + 2, i['y'] + 2, fill="red", activefill="cyan")))
+		
+		f.close()
+	except JSONDecodeError:
+		pass
 	
 	print(len(finalciudades), "ciudades cargadas")
 
@@ -1417,24 +1447,27 @@ def cargarRutas():
 
 	print("Cargando rutas")
 	
-	f = open(rutasF, 'r')
-	data = json.loads(f.read())
-	
-	for i in data: # Dibujar rutas
-		temp = Ruta(i['id'], i['ruta'], i['paradas'])
-		finalrutas.append(temp)
+	try:
+		f = open(rutasF, 'r')
+		data = json.loads(f.read())
 		
-		tempC = []
+		for i in data: # Dibujar rutas
+			temp = Ruta(i['id'], i['ruta'], i['paradas'])
+			finalrutas.append(temp)
+			
+			tempC = []
+			
+			for i in range(len(temp.ruta)):
+				if (temp.paradas[i] != -1):
+					tempC.append(-1) # Añadir un circulo vacio
+					continue
+				tempC.append(create_circle(temp.ruta[i][0], temp.ruta[i][1], 3, canvas))
+			
+			rutas.append(LineaDibujada(temp, canvas.create_line(temp.ruta), tempC))
 		
-		for i in range(len(temp.ruta)):
-			if (temp.paradas[i] != -1):
-				tempC.append(-1) # Añadir un circulo vacio
-				continue
-			tempC.append(create_circle(temp.ruta[i][0], temp.ruta[i][1], 3, canvas))
-		
-		rutas.append(LineaDibujada(temp, canvas.create_line(temp.ruta), tempC))
-	
-	f.close()
+		f.close()
+	except JSONDecodeError:
+		pass
 	
 	print(len(finalrutas), "rutas cargadas")
 
@@ -1443,13 +1476,16 @@ def cargarTrenes():
 	
 	print("Cargando trenes")
 	
-	f = open(trenesF, 'r')
-	data = json.loads(f.read())
-	
-	for i in data: # Meter trenes en la lista
-		finaltrenes.append(Tren(i['id'], i['nombre'], i['color'], i['trayectos']))
-	
-	f.close()
+	try:
+		f = open(trenesF, 'r')
+		data = json.loads(f.read())
+		
+		for i in data: # Meter trenes en la lista
+			finaltrenes.append(Tren(i['id'], i['nombre'], i['color'], i['trayectos']))
+		
+		f.close()
+	except JSONDecodeError:
+		pass
 	
 	print(len(finaltrenes), "trenes cargados")
 

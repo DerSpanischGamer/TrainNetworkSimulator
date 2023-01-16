@@ -1,12 +1,13 @@
-# USO: python cancionVideo.py "ARCHIVO.amds"
+# USO: python network.py
 # Nota: siempre va a guardar los archivos en una carpeta llamada output
 
 # ------------ LIBRERIAS ------------
 
 import os
 import sys
-import numpy as np
 import json
+import copy
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 # ------------ CLASES ------------
@@ -65,7 +66,7 @@ finaltrenes = [] # Guarda todos las clases Trenes (finaltrenes)
 trenes = [] # Guarda todas las clases EntidadTren
 
 initH = 600
-fintH = 800
+fintH = 1100
 horaAct = initH # Hora actual
 
 fotograma = None # Guarda el fondo sobre el que se van a dibujar los trenes
@@ -123,23 +124,21 @@ def actualizarTrenes():
 			
 			del tren.ruta[0:i]
 
-	for tren in finaltrenes:	# Mirar si hay algun tren que tenga que ser añadido
-		for tray in tren.trayectos: # Mirar en cada horario
-			if (horaAct == tray[2][0]):
-				trenes.append(EntidadTren(tren.color, tray[1], tray[2], tray[3], False))
-				
-				del trenes[-1].initH[0]
-	
 	for i in range(len(trenes), 0, -1):		# Mirar si hay trenes que se tienen que despawnear : recorrer la lista al reves para ir borrando
 		if (len(trenes[i - 1].fintH) == 1 and horaAct == trenes[i - 1].fintH[0]):
 			del trenes[i - 1]
+	
+	for tren in finaltrenes:	# Mirar si hay algun tren que tenga que ser añadido
+		for tray in tren.trayectos: # Mirar en cada horario
+			if (horaAct == tray[2][0]):
+				trenes.append(EntidadTren(tren.color, copy.deepcopy(tray[1]), copy.deepcopy(tray[2]), copy.deepcopy(tray[3]), False))
+				
+				del trenes[-1].initH[0]
 	
 	for tren in trenes: # Por ultimo mirar si hay que sacar algun tren la estacion
 		if (not tren.moviendose and tren.fintH[0] == horaAct):
 			tren.moviendose = True
 			tren.disTot = 0 # Sanity check (no deberia ser util)
-			
-			print("Salida estacion")
 			
 			for i in range(1, len(tren.ruta)): # Calcular la distancia total que tiene que transcurrir el tren
 				tren.disTot += distancia(tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1], tren.ruta[i][1][0], tren.ruta[i][1][1])
@@ -155,8 +154,6 @@ def calcularPosiciones():
 			i = 1
 			
 			disAct = tren.disTot * linAprox(hora2mins(tren.initH[0]), hora2mins(tren.fintH[0]), hora2mins(horaAct))
-			
-			print(tren.fintH[0], horaAct, tren.initH[0], linAprox(hora2mins(tren.initH[0]), hora2mins(tren.fintH[0]), hora2mins(horaAct)), disAct)
 			
 			while (i < len(tren.ruta) and disRec < disAct):
 				disRec += distancia(tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1], tren.ruta[i][1][0], tren.ruta[i][1][1])
@@ -204,8 +201,8 @@ def dibujarFotograma():
 	
 	frames = [i for i in range(int(FPS * SPM * diferenciaHoras(initH, fintH)))] # Hacer una lista de todos los frames
 	
-	# for i in progressBar(frames, prefix = 'Progreso:', suffix = 'Completado', length = 50):
-	for i in frames:
+	for i in progressBar(frames, prefix = 'Progreso:', suffix = 'Completado', length = 50):
+	#for i in frames:
 		frame = fotograma.copy()
 		draw = ImageDraw.Draw(frame)
 		

@@ -10,7 +10,6 @@
 
 # ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA
 # ERROR : A VECES (NO REPLICABLE) CUANDO SE EDITA UNA RUTA Y SE BORRA UN PUNTO QUEDA UN CIRCULO Y HACE MIERDA CON LAS OTRAS
-# ERROR : CUANDO HAY MULTIPLES RUTAS, SE ANULA Y DESPUES SE SELECCIONA UNA PARADA
 # TODO : PODER BORRAR LINEAS DESDE EL EDITOR DE LINEAS (un botoncito o algo)
 # TODO : ACABAR DE IMPLEMENTAR ELEGIR MULTIPLES RUTAS (flemme lol)
 # TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL
@@ -64,7 +63,6 @@ finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el
 selec = None # Ventana donde se selecciona una de las rutas
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
 rutaSelect = None # OptionMenu para seleccionar la ruta
-rutaSelectSv = None # StringVar con la opcion seleccionada
 proponerAlt = False # Proponer una ruta inderecta si se ha encontrado una ruta directa
 rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
@@ -865,7 +863,7 @@ def quitarParadaRuta(par): # Par es la "id" de la linea de widgets (4º posicion
 	
 	return poss # Devolver todas las posiciones
 
-def quitarParada(par):
+def quitarParada(par, borrar = True):
 	global trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, rutasActuales
 	
 	parada = getParada(par)
@@ -874,7 +872,7 @@ def quitarParada(par):
 	
 	for i in range(len(trayectosActuales[posActual][parada[1]]) - 2):
 		trayectosActuales[posActual][parada[1]][i].destroy()
-	
+		
 	length = len(trayectosActuales[posActual])
 	dX = [10, 30, 250, 325]
 	
@@ -882,20 +880,6 @@ def quitarParada(par):
 		dY = [63 + i*30, 60 + i*30, 65 + i*30, 65 + i*30]
 		for j in range(4):
 			trayectosActuales[posActual][i][j].place(x = dX[j], y = dY[j])
-	
-	poss = quitarParadaRuta(par)
-	
-	if (poss[0] != None and poss[2] != None): # Recalcular la ruta si la parada que se ha quitado estaba entre medias de otras dos
-		posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], rutasActuales[posActual][poss[0] + 1][0])
-		
-		for i in range(len(posRuta)):
-			rutasActuales[posActual].insert(poss[0] + 1 + i, [-1, posRuta[i]])
-	
-	del trayectosActuales[posActual][parada[1]]
-	
-	actualizarPosibilidades()
-	
-	dibujarLineaRuta()
 	
 	length -= 1
 	
@@ -914,6 +898,21 @@ def quitarParada(par):
 	trayectoDel.destroy()
 	trayectoDel = Button(top, text = "Borrar", command = borrarHorario)
 	trayectoDel.place(x = 240, y = 95 + length*30)
+	
+	if (borrar):
+		poss = quitarParadaRuta(par)
+	
+		if (poss[0] != None and poss[2] != None): # Recalcular la ruta si la parada que se ha quitado estaba entre medias de otras dos
+			posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], rutasActuales[posActual][poss[0] + 1][0])
+			
+			for i in range(len(posRuta)):
+				rutasActuales[posActual].insert(poss[0] + 1 + i, [-1, posRuta[i]])
+		
+	del trayectosActuales[posActual][parada[1]]
+	
+	actualizarPosibilidades()
+	
+	dibujarLineaRuta()
 
 def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos movemos en posActual -1 o +1
 	global top, trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, horarioAct, rutasActuales
@@ -983,41 +982,38 @@ def borrarHorario():
 	
 	cambiarHorario(0)
 
-def cerrarPosiblesRutas():
-	global selec, rutaSelect, rutaSelectSv
-	
-	rutaSelect.destroy()
-	selec.destroy()
-	
-	rutaSelectSv = None
-	rutaSelect = None
-	selec = None
-
 def colorearLinea(value):
-	global canvas, posiblesRutas, puntoDivergencia, lineaTemp, posibSelec
+	global canvas, posiblesRutas, puntoDivergencia, lineaTemp, posibSelec, parada
 	
 	if (lineaTemp != None): canvas.delete(lineaTemp) # Borrar linea
 	
+	posC = getCiudadId(parada[0])
+	
 	posibSelec = puntoDivergencia.index(value)
-	lineaTemp = canvas.create_line(posiblesRutas[posibSelec], width = 3, fill = "yellow")
+	
+	puntosTemp = copy.deepcopy(posiblesRutas[posibSelec])
+	puntosTemp.append([finalciudades[posC].x, finalciudades[posC].y])
+	
+	lineaTemp = canvas.create_line(puntosTemp, width = 3, fill = "yellow")
 
 def posibilidadesCerrar(cancelar = True):
-	global canvas, selec, rutaSelect, lineaTemp, trayectosActuales, posActual
+	global canvas, selec, rutaSelect, lineaTemp, trayectosActuales, posActual, posibSelec
 	
-	if (cancelar):
-		quitarParada(trayectosActuales[posActual][-1][4])
+	if (cancelar): # Hacer como si el usuario no hubiera elegido la parada
+		quitarParada(trayectosActuales[posActual][-1][4], False)
 	
 	selec.destroy()
 	
-	selec = None
-	rutaSelect = None
-	
 	canvas.delete(lineaTemp)
 	lineaTemp = None
+	
+	posiblesRutas = None
 	posibSelec = None
+	rutaSelect = None
+	selec = None
 
 def mostrarPosiblesRutas(t): # t es cómo se tiene que incrustar la ruta una vez se seleccione
-	global selec, rutaSelect, rutaSelect, rutaSelectSv, puntoDivergencia, tipo
+	global selec, rutaSelect, rutaSelect, puntoDivergencia, tipo
 	
 	tipo = t
 	
@@ -1040,13 +1036,9 @@ def mostrarPosiblesRutas(t): # t es cómo se tiene que incrustar la ruta una vez
 	colorearLinea(puntoDivergencia[0]) # Dibujar la primera ruta cause why fucking not
 
 def seleccionarOpcion(): # Cuando se confirma una ruta a traver de una ruta or smth idk
-	global tipo, posActual, posProx, parada, rutasActuales, rutaSelectSv, posibSelec, posiblesRutas, puntoDivergencia, linea
-	
-	posibSelec = puntoDivergencia.index(rutaSelectSv.get()) # Coger la ruta seleccionada
+	global tipo, posActual, posProx, parada, rutasActuales, posibSelec, posiblesRutas, puntoDivergencia, linea
 	
 	posC = getCiudadId(parada[0])
-	
-	print(posiblesRutas[posibSelec])
 	
 	if (tipo == 0):
 		rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
@@ -1058,7 +1050,7 @@ def seleccionarOpcion(): # Cuando se confirma una ruta a traver de una ruta or s
 		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
 	
 	posibilidadesCerrar(False)
-	dibujarLinea()
+	dibujarLineaRuta()
 
 def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
 	global finalciudades, trayectosActuales, posActual, parada, posProx, rutasActuales

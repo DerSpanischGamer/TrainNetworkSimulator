@@ -1,302 +1,32 @@
 [
     {
+        "id": 4,
+        "nombre": "GE",
+        "x": 234,
+        "y": 826
+    },
+    {
         "id": 0,
-        "nombre": "GENF",
-        "x": 232,
-        "y": 827
+        "nombre": "BERNE",
+        "x": 703,
+        "y": 420
     },
     {
         "id": 1,
-        "nombre": "GE-AP",
-        "x": 221,
-        "y": 816
+        "nombre": "ZH",
+        "x": 1066,
+        "y": 237
     },
     {
         "id": 2,
-        "nombre": "LAUSANNE",
-        "x": 405,
-        "y": 675
+        "nombre": "SION",
+        "x": 812,
+        "y": 768
     },
     {
         "id": 3,
-        "nombre": "BERN",
-        "x": 688,
-        "y": 459
-    },
-    {
-        "id": 4,
-        "nombre": "FRIBOURG",
-        "x": 589,
-        "y": 531
-    },
-    {
-        "id": 5,
-        "nombre": "OLTEN",
-        "x": 849,
-        "y": 254
-    },
-    {
-        "id": 7,
-        "nombre": "ZURICH HB",
-        "x": 1068,
-        "y": 238
-    },
-    {
-        "id": 6,
-        "nombre": "ST GALLEN",
-        "x": 1352,
-        "y": 210
-    },
-    {
-        "id": 8,
-        "nombre": "WIL SG",
-        "x": 1239,
-        "y": 194
-    },
-    {
-        "id": 9,
-        "nombre": "GOSSAU",
-        "x": 1313,
-        "y": 219
-    },
-    {
-        "id": 10,
-        "nombre": "UZWIL",
-        "x": 1270,
-        "y": 206
-    },
-    {
-        "id": 11,
-        "nombre": "FLAWIL",
-        "x": 1292,
-        "y": 216
-    },
-    {
-        "id": 12,
-        "nombre": "WINTERTHUR",
-        "x": 1126,
-        "y": 181
-    },
-    {
-        "id": 13,
-        "nombre": "ZURICH OERLIKON",
-        "x": 1065,
-        "y": 227
-    },
-    {
-        "id": 14,
-        "nombre": "ZURICH AP",
-        "x": 1072,
-        "y": 207
-    },
-    {
-        "id": 15,
-        "nombre": "ZUG",
-        "x": 1060,
-        "y": 342
-    },
-    {
-        "id": 16,
-        "nombre": "BELLINZONA",
-        "x": 1249,
-        "y": 833
-    },
-    {
-        "id": 17,
-        "nombre": "ALTDORF",
-        "x": 1099,
-        "y": 481
-    },
-    {
-        "id": 18,
-        "nombre": "ARTH-GOLDAU",
-        "x": 1073,
-        "y": 405
-    },
-    {
-        "id": 19,
-        "nombre": "LUGANO",
-        "x": 1221,
-        "y": 928
-    },
-    {
-        "id": 20,
-        "nombre": "BASEL",
-        "x": 739,
-        "y": 155
-    },
-    {
-        "id": 21,
-        "nombre": "SARGANS",
-        "x": 1384,
-        "y": 403
-    },
-    {
-        "id": 22,
-        "nombre": "LANDQUART",
-        "x": 1422,
-        "y": 439
-    },
-    {
-        "id": 23,
-        "nombre": "CHUR",
-        "x": 1414,
-        "y": 498
-    },
-    {
-        "id": 24,
-        "nombre": "SINGEN",
-        "x": 1166,
-        "y": 45
-    },
-    {
-        "id": 25,
-        "nombre": "SCHAFFHAUSEN",
-        "x": 1097,
-        "y": 74
-    },
-    {
-        "id": 26,
-        "nombre": "MORGES",
-        "x": 350,
-        "y": 682
-    },
-    {
-        "id": 27,
-        "nombre": "YVERDON",
-        "x": 406,
-        "y": 536
-    },
-    {
-        "id": 28,
-        "nombre": "NEUCHATEL",
-        "x": 514,
-        "y": 433
-    },
-    {
-        "id": 29,
-        "nombre": "BIEL",
-        "x": 622,
-        "y": 364
-    },
-    {
-        "id": 30,
-        "nombre": "SOLOTHURN",
-        "x": 724,
-        "y": 331
-    },
-    {
-        "id": 31,
-        "nombre": "AARAU",
-        "x": 898,
-        "y": 234
-    },
-    {
-        "id": 32,
-        "nombre": "RORSCHACH",
-        "x": 1396,
-        "y": 181
-    },
-    {
-        "id": 33,
-        "nombre": "THUN",
-        "x": 755,
-        "y": 556
-    },
-    {
-        "id": 34,
-        "nombre": "SPIEZ",
-        "x": 764,
-        "y": 588
-    },
-    {
-        "id": 35,
-        "nombre": "VISP",
-        "x": 843,
-        "y": 789
-    },
-    {
-        "id": 36,
-        "nombre": "BRIG",
-        "x": 881,
-        "y": 776
-    },
-    {
-        "id": 37,
-        "nombre": "DOMODOSSOLA",
-        "x": 992,
-        "y": 878
-    },
-    {
-        "id": 38,
-        "nombre": "ROMANSHORN",
-        "x": 1353,
-        "y": 139
-    },
-    {
-        "id": 39,
-        "nombre": "FRAUENFELD",
-        "x": 1189,
-        "y": 148
-    },
-    {
-        "id": 40,
-        "nombre": "WEI\nNFELD",
-        "x": 1259,
-        "y": 140
-    },
-    {
-        "id": 41,
-        "nombre": "AMRISWIL",
-        "x": 1338,
-        "y": 148
-    },
-    {
-        "id": 42,
-        "nombre": "LUZERN",
-        "x": 992,
-        "y": 409
-    },
-    {
-        "id": 43,
-        "nombre": "LAUFEN",
-        "x": 709,
-        "y": 220
-    },
-    {
-        "id": 44,
-        "nombre": "DELEMONT",
-        "x": 657,
-        "y": 249
-    },
-    {
-        "id": 45,
-        "nombre": "MOUTIER",
-        "x": 668,
-        "y": 290
-    },
-    {
-        "id": 46,
-        "nombre": "GRENCHEN",
-        "x": 670,
-        "y": 336
-    },
-    {
-        "id": 47,
-        "nombre": "LIESTAL",
-        "x": 788,
-        "y": 188
-    },
-    {
-        "id": 48,
-        "nombre": "INTERLAKEN WEST",
-        "x": 832,
-        "y": 591
-    },
-    {
-        "id": 49,
-        "nombre": "INTERLAKEN OST",
-        "x": 838,
-        "y": 585
+        "nombre": "LAUSANNE",
+        "x": 338,
+        "y": 687
     }
 ]

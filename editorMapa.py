@@ -4,8 +4,14 @@
 
 # IMPORTANTE : ¡¡¡ EMPEZAR A CREAR LAS LINEAS DE TRENES UNA VEZ QUE LAS RUTAS Y LAS ESTACIONES ESTÉN ACABADAS !!!
 
+# ============ EN DESARROLLO ============
+
+# ============ MÁS TARDE ============
+
 # ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA
+# ERROR : A VECES (NO REPLICABLE) CUANDO SE EDITA UNA RUTA Y SE BORRA UN PUNTO QUEDA UN CIRCULO Y HACE MIERDA CON LAS OTRAS
 # ERROR : CUANDO HAY MULTIPLES RUTAS, SE ANULA Y DESPUES SE SELECCIONA UNA PARADA
+# TODO : PODER BORRAR LINEAS DESDE EL EDITOR DE LINEAS (un botoncito o algo)
 # TODO : ACABAR DE IMPLEMENTAR ELEGIR MULTIPLES RUTAS (flemme lol)
 # TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL
 
@@ -58,6 +64,7 @@ finaltrenes = [] # Guarda las classes Tren que seran las que se escribiran en el
 selec = None # Ventana donde se selecciona una de las rutas
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
 rutaSelect = None # OptionMenu para seleccionar la ruta
+rutaSelectSv = None # StringVar con la opcion seleccionada
 proponerAlt = False # Proponer una ruta inderecta si se ha encontrado una ruta directa
 rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
@@ -363,7 +370,7 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 			dst = ruta.paradas.index(destino)
 			
 			if (dst > org):
-				posiblesRutas.append(ruta.ruta[(org + 1):dst])       # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
+				posiblesRutas.append(ruta.ruta[(org + 1):dst])       	 # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
 			else:
 				posiblesRutas.append(list(reversed(ruta.ruta[dst:org]))) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
 			
@@ -391,11 +398,12 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					
 					temp = []
 					
-					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[org:(vi1 + 1)]]
-					else:			[temp.append(r) for r in list(reversed(rutaOr.ruta[vi1:(org + 1)]))]
+					# En el primer trayecto NO se incluye NI el origen NI el punto de intercambio   ;   En el ultimo punto NO se incluye el destino pero SI el punto de intercambio
+					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[(org + 1):vi1]]
+					else:			[temp.append(r) for r in list(reversed(rutaOr.ruta[(vi1 + 1):(org - 1)]))]
 					
-					if (vi2 > dst): [temp.append(r) for r in list(reversed(rutaDe.ruta[dst:(vi2 + 1)]))]
-					else:			[temp.append(r) for r in rutaDe.ruta[(vi2 + 1):(dst + 1)]]
+					if (vi2 > dst): [temp.append(r) for r in list(reversed(rutaDe.ruta[(dst + 1):(vi2 + 1)]))]
+					else:			[temp.append(r) for r in rutaDe.ruta[vi2:dst]]
 					
 					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre)
 					posiblesRutas.append(temp)
@@ -529,19 +537,26 @@ def click(event):
 	
 	coords = [event.x, event.y]
 	
+	if (len(lineas) >= 1 and coords[0] == lineas[-1][0] and coords[1] == lineas[-1][1]): return
+	
 	paradas.append(-1)
 	circulos.append(create_circle(event.x, event.y, 3, canvas)) # Añadir circulo del lugar actual
+	
+	lineas.append(coords) # Si no se ha seleccionado una ciudad, entonces se crea un circulo para poder mover (no pasa con lineas nuevas)
 	
 	for i in range(len(finalciudades)): # Detectar si el click ha sido cerca de una ciudad para registrarlo como una parada
 		if (distancia(coords, [finalciudades[i].x, finalciudades[i].y]) < 5):
 			canvas.delete(circulos[-1])
 			circulos[-1] = -1 # Mantener algo por si acaso se borrara la estacion
 			
+			if (len(paradas) > 1 and paradas[-2] == finalciudades[i].id):
+				lineas.pop()
+				paradas.pop()
+				break
+			
 			coords = [finalciudades[i].x, finalciudades[i].y]
 			paradas[-1] = finalciudades[i].id
 			break
-	
-	lineas.append(coords) # Si no se ha seleccionado una ciudad, entonces se crea un circulo para poder mover (no pasa con lineas nuevas)
 	
 	dibujarLinea()
 
@@ -603,7 +618,6 @@ def editar(event):
 				
 				eraCiudad = False
 				
-				print("Nuevo punto")
 				break
 	
 	dibujarLinea()
@@ -695,7 +709,7 @@ def guardarRuta(event):
 	global idR, linea, lineas, paradas, circulos
 	
 	if (len(lineas) < 2):
-		canvas.delete(circulos[0])
+		if (len(circulos) > 0): canvas.delete(circulos[0])
 		circulos = []
 		lineas = []
 		paradas = []
@@ -970,11 +984,12 @@ def borrarHorario():
 	cambiarHorario(0)
 
 def cerrarPosiblesRutas():
-	global selec, rutaSelect
+	global selec, rutaSelect, rutaSelectSv
 	
 	rutaSelect.destroy()
 	selec.destroy()
 	
+	rutaSelectSv = None
 	rutaSelect = None
 	selec = None
 
@@ -987,7 +1002,7 @@ def colorearLinea(value):
 	lineaTemp = canvas.create_line(posiblesRutas[posibSelec], width = 3, fill = "yellow")
 
 def posibilidadesCerrar(cancelar = True):
-	global canvas, selec, selecLn, lineaTemp, trayectosActuales, posActual
+	global canvas, selec, rutaSelect, lineaTemp, trayectosActuales, posActual
 	
 	if (cancelar):
 		quitarParada(trayectosActuales[posActual][-1][4])
@@ -995,14 +1010,14 @@ def posibilidadesCerrar(cancelar = True):
 	selec.destroy()
 	
 	selec = None
-	selecLn = None
+	rutaSelect = None
 	
 	canvas.delete(lineaTemp)
 	lineaTemp = None
 	posibSelec = None
 
-def mostrarPosiblesRutas(t):
-	global selec, rutaSelect, posiblesRutas, puntoDivergencia, tipo
+def mostrarPosiblesRutas(t): # t es cómo se tiene que incrustar la ruta una vez se seleccione
+	global selec, rutaSelect, rutaSelect, rutaSelectSv, puntoDivergencia, tipo
 	
 	tipo = t
 	
@@ -1016,30 +1031,37 @@ def mostrarPosiblesRutas(t):
 	Label(selec, text = "Elige una ruta").place(x = 50, y = 20)
 	Button(selec, text = "Aceptar", command = seleccionarOpcion).place(x = 50, y = 100)
 	
-	posRts = StringVar()
-	posRts.set(puntoDivergencia[0])
+	rutaSelectSv = StringVar()
+	rutaSelectSv.set(puntoDivergencia[0])
 	
-	selecLn = OptionMenu(selec, posRts, *puntoDivergencia, command = colorearLinea)
-	selecLn.place(x = 50, y = 50)
+	rutaSelect = OptionMenu(selec, rutaSelectSv, *puntoDivergencia, command = colorearLinea)
+	rutaSelect.place(x = 50, y = 50)
 	
 	colorearLinea(puntoDivergencia[0]) # Dibujar la primera ruta cause why fucking not
 
-def seleccionarOpcion(ruta): # Cuando se selecciona una 
-	global tipo, posActual, rutasActuales, rutaSelect, posibSelec, posiblesRutas
+def seleccionarOpcion(): # Cuando se confirma una ruta a traver de una ruta or smth idk
+	global tipo, posActual, posProx, parada, rutasActuales, rutaSelectSv, posibSelec, posiblesRutas, puntoDivergencia, linea
+	
+	posibSelec = puntoDivergencia.index(rutaSelectSv.get()) # Coger la ruta seleccionada
+	
+	posC = getCiudadId(parada[0])
+	
+	print(posiblesRutas[posibSelec])
 	
 	if (tipo == 0):
 		rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
 		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(1 + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
 	elif (tipo == 1):
-		print("1")
+		print("1") # ha ha gracias yo del pasado
 	else:
-		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(poss[1] + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
+		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(posProx[1] + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
 		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
 	
 	posibilidadesCerrar(False)
+	dibujarLinea()
 
 def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # Se llama cada vez que se cambia de parada ; recibe como argumento el 4º argumento de trayectosActuales[posActual] el pseudo id de cada linea en trayectosActuales[posActual]
-	global finalciudades, trayectosActuales, posActual, rutasActuales
+	global finalciudades, trayectosActuales, posActual, parada, posProx, rutasActuales
 	
 	if (auto): # Si la parada ha sido generada automaticamente cuando se carga una linea de tren generada previamente, no hay que crear una ruta
 		actualizarPosibilidades()
@@ -1063,9 +1085,9 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			rutasActuales[posActual] = [[parada[0], [finalciudades[posC].x, finalciudades[posC].y]]]
 			return
 		
-		poss = quitarParadaRuta(par)
+		posProx = quitarParadaRuta(par)
 		
-		if (poss[0] == None):
+		if (posProx[0] == None):
 			print(trayectosActuales[posActual][parada[1] + 1][0])
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
@@ -1078,8 +1100,8 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
 			
 			for i in range(len(posRuta)):	rutasActuales[posActual].insert(1 + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
-		elif (poss[2] == None):
-			posRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0])
+		elif (posProx[2] == None):
+			posRuta = getRutaPuntos(rutasActuales[posActual][posProx[0]][0], parada[0])
 			
 			if (len(posRuta) > 1):
 				mostrarPosiblesRutas(2)
@@ -1087,13 +1109,13 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			
 			posRuta = posRuta[0]
 			
-			for i in range(len(posRuta)):	rutasActuales[posActual].insert(poss[1] + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
+			for i in range(len(posRuta)):	rutasActuales[posActual].insert(posProx[1] + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
 			
 			rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
 		else:
-			preRuta = getRutaPuntos(rutasActuales[posActual][poss[0]][0], parada[0]) # Desde el punto anterior hasta la nueva parada
+			preRuta = getRutaPuntos(rutasActuales[posActual][posProx[0]][0], parada[0]) # Desde el punto anterior hasta la nueva parada
 			
-			finPos = poss[0] + 1 # Posicion donde se tiene que insertar
+			finPos = posProx[0] + 1 # Posicion donde se tiene que insertar
 			
 			for i in range(len(preRuta)):
 				rutasActuales[posActual].insert(finPos, [-1, preRuta[i]])

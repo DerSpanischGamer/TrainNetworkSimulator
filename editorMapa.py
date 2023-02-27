@@ -6,13 +6,13 @@
 
 # ============ EN DESARROLLO ============
 
+# TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL - LO QUE HAY QUE HACER ES QUE CADA CIUDAD EN LA QUE SE PUEDA BUSCAR VA A DIVIDIRSE HASTA QUE : a) LLEGUE A LA CIUDAD DESEADA b) PASE POR LA MISMA CIUDAD 2 VECES
+
 # ============ MÁS TARDE ============
 
-# ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA
+# ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA (ni idea de lo que habla)
 # ERROR : A VECES (NO REPLICABLE) CUANDO SE EDITA UNA RUTA Y SE BORRA UN PUNTO QUEDA UN CIRCULO Y HACE MIERDA CON LAS OTRAS
-# TODO : PODER BORRAR LINEAS DESDE EL EDITOR DE LINEAS (un botoncito o algo)
 # TODO : ACABAR DE IMPLEMENTAR ELEGIR MULTIPLES RUTAS (flemme lol)
-# TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL
 
 import copy
 import math
@@ -22,11 +22,13 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 from tkinter.constants import *
 from tkinter import colorchooser
+from tkinter.messagebox import askyesno
 from json.decoder import JSONDecodeError
 
 # --------- VARIABLES ---------
 
 top = None # Ventana extra para informaciones
+idTedit = None # id del tren que se está editando
 selecLn = None # OptionMenu para seleccionar linea de tren
 textBox = None # Textbox con el nombre de la ciudad que se esta creando
 nombreLin = None # Textbox con el nombre de la linea que se esta creando
@@ -36,6 +38,7 @@ anadirParada = None # Boton de añadir parada
 trayectoSig = None # Siguiente trayecto (añade uno si no existe)
 trayectoAnt = None # Trayecto anterior (el boton se oculta si no hay)
 trayectoDel = None # Borrar el trayecto actual
+lineaDel = None # Borrar la linea
 
 ciudad = False # Estamos en modo ciudad ?
 eraCiudad = False # Estamos moviendo un punto que era una ciudad ?
@@ -256,6 +259,15 @@ def getTren(nombre): # Devuelve la posicion de la Tren en finaltrenes
 	
 	return None
 
+def getTrenId(id):
+	global finaltrenes
+	
+	for i in range(len(finaltrenes)):
+		if (finaltrenes[i].id == id):
+			return i
+	
+	return None
+
 def getRutaId(idR): # Devuelve la posicion de Ruta en finalrutas
 	global finalrutas
 	
@@ -349,6 +361,20 @@ def mostrarRutas():
 	
 	return None
 
+def getRutaPuntosRec(origen, destino, rDestin, visitadas = []): # Origen es la ciudad en la que nos encontramos, destino es el destino final, rDestin son las rutas que pasan por el destino (asi no hay que calcularlas siempre) y visitadas son las ciudades por las que ya hemos pasado
+	global finalrutas, finalciudades
+	
+	if (origen in visitadas): return None # Desde el punto de vista de la función : si la parada en la que estamos ya la hemos visitado, entonces salimos
+	
+	rOrigen = getRutasPorCiudad(origen) # Rutas que pasan por el origen
+	
+	for rutaId in rOrigen:
+		ruta = finalrutas[getRutaId(rutaId)]
+		
+		if rutaId in rDestin: # La ruta esta en el destino
+			visitadas.append(origen)
+			return visitadas
+
 def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre dos puntos (origen, destino) recibiendo el id de las ciudades de origen y destino TODO : REHACER PARA QUE SEA RECURSIVO
 	global finalrutas, finalciudades, posiblesRutas, puntoDivergencia
 	
@@ -370,7 +396,7 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 			if (dst > org):
 				posiblesRutas.append(ruta.ruta[(org + 1):dst])       	 # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
 			else:
-				posiblesRutas.append(list(reversed(ruta.ruta[dst:org]))) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
+				posiblesRutas.append(ruta.ruta[dst:org][::-1]) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
 			
 			puntoDivergencia.append("Directo")
 	
@@ -398,9 +424,9 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					
 					# En el primer trayecto NO se incluye NI el origen NI el punto de intercambio   ;   En el ultimo punto NO se incluye el destino pero SI el punto de intercambio
 					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[(org + 1):vi1]]
-					else:			[temp.append(r) for r in list(reversed(rutaOr.ruta[(vi1 + 1):(org - 1)]))]
+					else:			[temp.append(r) for r in rutaOr.ruta[(vi1 + 1):(org - 1)][::-1]
 					
-					if (vi2 > dst): [temp.append(r) for r in list(reversed(rutaDe.ruta[(dst + 1):(vi2 + 1)]))]
+					if (vi2 > dst): [temp.append(r) for r in rutaDe.ruta[(dst + 1):(vi2 + 1)][::-1]]
 					else:			[temp.append(r) for r in rutaDe.ruta[vi2:dst]]
 					
 					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre)
@@ -807,7 +833,7 @@ def borrarItem(event): # Borrar una ruta entera
 def elegirCiudad(value):
 	global trayectosActuales
 	
-	print(value)
+	print("Ciudad elegida : " + value)
 	return None
 
 def dibujarLineaRuta():
@@ -864,7 +890,9 @@ def quitarParadaRuta(par): # Par es la "id" de la linea de widgets (4º posicion
 	return poss # Devolver todas las posiciones
 
 def quitarParada(par, borrar = True):
-	global trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, rutasActuales
+	global trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, rutasActuales
+	
+	if (len(trayectosActuales[posActual]) <= 1): return
 	
 	parada = getParada(par)
 	
@@ -896,8 +924,12 @@ def quitarParada(par, borrar = True):
 	trayectoSig.place(x = 175, y = 95 + length*30)
 	
 	trayectoDel.destroy()
-	trayectoDel = Button(top, text = "Borrar", command = borrarHorario)
+	trayectoDel = Button(top, text = "Borrar horario", command = borrarHorario)
 	trayectoDel.place(x = 240, y = 95 + length*30)
+	
+	lineaDel.destroy()
+	lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
+	lineaDel.place(x = 330, y = 95 + length*30)
 	
 	if (borrar):
 		poss = quitarParadaRuta(par)
@@ -966,6 +998,21 @@ def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos move
 	horarioAct.set("Horario " + str(posActual + 1) + '/' + str(len(trayectosActuales)))
 	
 	dibujarLineaRuta()
+
+def borrarLinea():
+	global finaltrenes, idTedit
+	
+	respuesta = askyesno(title = "Confirmación", message = "¿ Estás seguro que quiere borrar una línea ?")
+	
+	if (not respuesta): return
+	
+	del finaltrenes[getTrenId(idTedit)]
+	
+	escribirTrenes()
+	generarIdTren()
+	
+	cancelarTren()
+	crearLineaTren()
 
 def borrarHorario():
 	global trayectosActuales, rutasActuales, posActual
@@ -1079,7 +1126,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		
 		posProx = quitarParadaRuta(par)
 		
-		if (posProx[0] == None):
+		if (posProx[0] == None): # Hay que insertarla al principio
 			print(trayectosActuales[posActual][parada[1] + 1][0])
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
@@ -1092,7 +1139,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
 			
 			for i in range(len(posRuta)):	rutasActuales[posActual].insert(1 + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
-		elif (posProx[2] == None):
+		elif (posProx[2] == None): # Hay que insertarla al final
 			posRuta = getRutaPuntos(rutasActuales[posActual][posProx[0]][0], parada[0])
 			
 			if (len(posRuta) > 1):
@@ -1104,7 +1151,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			for i in range(len(posRuta)):	rutasActuales[posActual].insert(posProx[1] + i, [-1, posRuta[i]]) # Si es la primera posicion, no se borra ninguna parada
 			
 			rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
-		else:
+		else: # Hay que insertarla entre medias
 			preRuta = getRutaPuntos(rutasActuales[posActual][posProx[0]][0], parada[0]) # Desde el punto anterior hasta la nueva parada
 			
 			finPos = posProx[0] + 1 # Posicion donde se tiene que insertar
@@ -1126,7 +1173,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 	dibujarLineaRuta()
 
 def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Añadir una parada al horario actual (posActual)
-	global root, top, anadirParada, trayectosActuales, posActual, trayectoAnt, trayectoSig, trayectoDel
+	global root, top, anadirParada, trayectosActuales, posActual, trayectoAnt, trayectoSig, trayectoDel, lineaDel
 	
 	if (len(trayectosActuales[posActual]) > 0):
 		idAnterior = finalciudades[getCiudad(trayectosActuales[posActual][-1][5].get())].id
@@ -1181,6 +1228,7 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 		trayectoAnt.destroy()
 		trayectoSig.destroy()
 		trayectoDel.destroy()
+		lineaDel.destroy()
 	
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
 	anadirParada.place(x = 10, y = 125 + length*30)
@@ -1191,8 +1239,11 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 	trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
 	trayectoSig.place(x = 175, y = 125 + length*30)
 	
-	trayectoDel = Button(top, text = "Borrar", command = borrarHorario)
+	trayectoDel = Button(top, text = "Borrar horario", command = borrarHorario)
 	trayectoDel.place(x = 240, y = 125 + length*30)
+	
+	lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
+	lineaDel.place(x = 330, y = 125 + length*30)
 
 def elegirColorTren():
 	global colorTren
@@ -1224,16 +1275,15 @@ def nuevoTren():
 	nombreLin.place(x = 175, y = 50)
 	nombreLin.insert(END, "Linea " + str(idT))
 	
+	Button(top, text = "Guardar", command = guardarTren).place(x = 175, y = 575)
+	
 	addParada()
 	
 def trenElegido(value):
-	global top, trayectosActuales, posActual, finaltrenes, finalciudades, nombreLin, rutasActuales, canvas, lineaRuta, colorTren, selecLn
+	global top, idTedit, trayectosActuales, posActual, finaltrenes, finalciudades, nombreLin, rutasActuales, canvas, lineaRuta, colorTren, selecLn
 	
 	pos = getTren(value)
-	
-	for i in range(len(trayectosActuales[posActual])): # Resetear por si se estaba haciendo una ruta y se pincha en nueva otra vez
-		for j in range(4):
-			trayectosActuales[i][j].destroy()
+	idTedit = finaltrenes[pos].id
 	
 	if (lineaRuta != None): canvas.delete(lineaRuta)
 	
@@ -1261,6 +1311,8 @@ def trenElegido(value):
 	
 	borrarHorario()
 	
+	Button(top, text = "Guardar", command = guardarTren).place(x = 175, y = 575)
+	
 	colorTren = Button(top, bg = finaltrenes[pos].color, command = elegirColorTren)
 	colorTren.place(x = 10, y = 10)
 	
@@ -1274,7 +1326,7 @@ def guardarTren(event = None):
 	
 	for ruta in trayectosActuales:
 		if (len(ruta) < 2):
-			print("Hay al menos un horario invalido")
+			print("Hay al menos un horario invalido con insuficientes paradas")
 			return # Si hay al menos una ruta con menos de 2 paradas, no se puede guardar visto que no es una ruta valida
 	
 	for ruta in trayectosActuales:
@@ -1305,14 +1357,14 @@ def guardarTren(event = None):
 	crearLineaTren()
 	
 def cancelarTren(evenet = None): # Llamar cuando se cierre la ventana, asi se cancelan los cambios y se resetea todo
-	global top, nombreLin, anadirParada, trayectosActuales, posActual, rutasActuales, canvas, lineaRuta, trayectoAnt, trayectoSig, trayectoDel, colorTren
-	
-	top.destroy()
+	global top, nombreLin, anadirParada, trayectosActuales, posActual, rutasActuales, canvas, lineaRuta, trayectoAnt, trayectoSig, trayectoDel, lineaDel, colorTren
 	
 	for rutaA in trayectosActuales:
 		for linea in rutaA:
 			for i in range(4):
 				linea[i].destroy() # Destruir los items que se han creado
+	
+	top.destroy()
 	
 	if (lineaRuta != None): canvas.delete(lineaRuta)
 	
@@ -1330,6 +1382,7 @@ def cancelarTren(evenet = None): # Llamar cuando se cierre la ventana, asi se ca
 	trayectoAnt = None
 	trayectoSig = None
 	trayectoDel = None
+	lineaDel = None
 
 def crearLineaTren(): # Se llama cuando se da a la T, crea la ventana y pone el editor en modo crear trenes
 	global finaltrenes, top, trayectosActuales, posActual, horarioAct, rutasActuales, lineaRuta, selecLn
@@ -1361,8 +1414,6 @@ def crearLineaTren(): # Se llama cuando se da a la T, crea la ventana y pone el 
 	horarioAct.set("")
 	
 	Label(top, textvariable = horarioAct).place(x = 150, y = 75)
-	
-	Button(top, text = "Guardar", command = guardarTren).place(x = 175, y = 575)
 	
 	top.bind("<Return>", guardarTren)
 	top.bind("<Escape>", cancelarTren)
@@ -1503,6 +1554,7 @@ def cargarTrenes():
 	
 	print(len(finaltrenes), "trenes cargados")
 
+# Cargar datos
 cargarCiudades()
 print()
 cargarRutas()
@@ -1512,9 +1564,12 @@ print()
 setModo(2)
 print()
 print("Generando ids")
+
+# Generar ids
 generarIdRuta()
 generarIdCiudad()
 generarIdTren()
+
 print()
 
 mainloop()

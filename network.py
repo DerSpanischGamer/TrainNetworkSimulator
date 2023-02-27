@@ -7,8 +7,14 @@ import os
 import sys
 import json
 import copy
+import math
 import numpy as np
+from tqdm import tqdm
 from PIL import Image, ImageDraw, ImageFont
+
+# ============ EN DESARROLLO ============
+
+# TODO : ARREGLAR RELOJ
 
 # ------------ CLASES ------------
 
@@ -40,7 +46,7 @@ class EntidadTren:
 		self.color = color
 		
 		self.initH = initH # Guarda todas las horas de salida   
-		self.fintH = fintH # Guarda todas las horas de llegada  SE VAN BORRANDO CONFORME NO SEAN UTILES, ASI SIEMPRE ESTAN EN 0
+		self.fintH = fintH # Guarda todas las horas de llegada (se van borrando conforme no sean utiles, asi siempre esten en la posicion 0)
 		
 		self.ruta = ruta # Guarda toda la ruta que tiene que seguir el tren. Se va borrando una vez se llega a una parada
 		
@@ -65,13 +71,14 @@ finaltrenes = [] # Guarda todos las clases Trenes (finaltrenes)
 
 trenes = [] # Guarda todas las clases EntidadTren
 
-initH = 600
-fintH = 1100
+initH = 600  # Hora de inicio
+fintH = 2000 # Hora de fin
 horaAct = initH # Hora actual
 
 fotograma = None # Guarda el fondo sobre el que se van a dibujar los trenes
 frame = None # Guarda el elemento para dibujar
 outputF = "trenes" # Nombre del archivo de video
+borrarArchivos = True # Define si se tienen que borrar archivos una vez se haya acabado de crear el video
 
 # ------------ FUNCIONES ------------
 
@@ -103,10 +110,41 @@ def diferenciaHoras(h0, h1): # Devuelve la diferencia en minutos [ h1 > h0 ]
 	
 	return hora2mins(h1) - hora2mins(h0)
 
-def dibujarReloj(x, y):  # x, y son el centro del reloj
+def dibujarReloj():  # x, y son el centro del reloj
 	global draw, horaAct
-
-	draw.ellipse()
+	
+	# Definir las propiedades del reloj
+	hora = horaAct // 100
+	minuto = horaAct - (hora * 100)
+	
+	relojTam = (256, 256)
+	relojCent = (relojTam[0] // 2, relojTam[1] // 2)
+	
+	horaLen = 0.4 * relojTam[0]
+	minuLen = 0.45 * relojTam[0]
+	
+	mark_length = 0.1 * relojTam[0]
+	
+	# Dibujar las marcas del reloj
+	for i in range(4):
+		angulo = i * math.pi / 2
+		dx = mark_length * math.cos(angulo)
+		dy = mark_length * math.sin(angulo)
+		draw.line((relojCent[0]+dx, relojCent[1]+dy, relojCent[0]-dx, relojCent[1]-dy), fill='black', width=2)
+	
+	# Calcular los angulos
+	angHora = 2 * math.pi * (hora / 12.0 + minuto / 720.0) - (math.pi / 2)
+	hour_dx = horaLen * math.cos(angHora)
+	hour_dy = horaLen * math.sin(angHora)
+	
+	angMinuto = 2 * math.pi * (minuto / 60.0) - (math.pi / 2)
+	minute_dx = minuLen * math.cos(angMinuto)
+	minute_dy = minuLen * math.sin(angMinuto)
+	
+	# Dibujar las manillas del reloj
+	draw.line((relojCent[0], relojCent[1], relojCent[0]+hour_dx, relojCent[1]+hour_dy), fill='black', width=4)
+	draw.line((relojCent[0], relojCent[1], relojCent[0]+minute_dx, relojCent[1]+minute_dy), fill='black', width=2)
+	draw.ellipse((0, 0, relojTam[0]-1, relojTam[1]-1), outline='black', width=2)
 
 def actualizarTrenes():
 	global finaltrenes, trenes, horaAct
@@ -168,40 +206,12 @@ def calcularPosiciones():
 			
 			draw.ellipse((x - 2, y - 2, x + 2, y + 2), fill = tren.color, outline = tren.color)
 
-def progressBar(iterable, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"): # Proudly stolen from Stackoverflow
-    """
-    Call in a loop to create terminal progress bar
-    @params:
-        iterable    - Required  : iterable object (Iterable)
-        prefix      - Optional  : prefix string (Str)
-        suffix      - Optional  : suffix string (Str)
-        decimals    - Optional  : positive number of decimals in percent complete (Int)
-        length      - Optional  : character length of bar (Int)
-        fill        - Optional  : bar fill character (Str)
-        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
-    """
-    total = len(iterable)
-    # Progress Bar Printing Function
-    def printProgressBar (iteration):
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
-        filledLength = int(length * iteration // total)
-        bar = fill * filledLength + '-' * (length - filledLength)
-        print(f'\r{prefix} |{bar}| {percent}% {suffix}', end = printEnd)
-    # Initial Call
-    printProgressBar(0)
-    # Update Progress Bar
-    for i, item in enumerate(iterable):
-        yield item
-        printProgressBar(i + 1)
-    # Print New Line on Complete
-    print()
-
 def dibujarFotograma():
 	global fotograma, horaAct, draw
 	
 	frames = [i for i in range(int(FPS * SPM * diferenciaHoras(initH, fintH)))] # Hacer una lista de todos los frames
 	
-	for i in progressBar(frames, prefix = 'Progreso:', suffix = 'Completado', length = 50):
+	for i in tqdm(frames, unit = 'Fotogramas'):
 	#for i in frames:
 		frame = fotograma.copy()
 		draw = ImageDraw.Draw(frame)
@@ -212,8 +222,9 @@ def dibujarFotograma():
 
 		calcularPosiciones()
 		
-		font = ImageFont.truetype("arial.ttf",  16)
-		draw.text((0, 0), str(horaAct), "#00ff00", font = font)
+		font = ImageFont.truetype("arial.ttf",  48)
+		dibujarReloj()
+		draw.text((256, 128), str(horaAct), "#000000", font = font)
 
 		frame.save("output/" + str(i) + "_Suiza.png")		# Guardar el fotograma
 		draw = None
@@ -308,4 +319,17 @@ print()
 
 main()
 
+# ==================== FINAL FUNCTIONS ====================
+
+print("Generando vídeo")
 os.system('ffmpeg -r ' + str(FPS) + ' -s 1920x1080 -i output/%d_Suiza.png -vcodec libx264 -crf 15 -y -pix_fmt yuv420p ' + outputF + '.mp4') # Create video
+
+if (borrarArchivos):
+	print("Borrando imagenes")
+	
+	files = os.listdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output'))
+	
+	# Loop through the files and delete them
+	for file in files:
+		file_path = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'output'), file)
+		os.remove(file_path)

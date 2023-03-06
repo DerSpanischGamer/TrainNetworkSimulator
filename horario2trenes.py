@@ -6,7 +6,7 @@ from json.decoder import JSONDecodeError
 
 # ============ EN DESARROLLO ============
 
-# TODO : VERIFICAR QUE TODO ESTE OK
+# TODO : VERIFICAR QUE TODO ESTE OK (HORA Y CIUDADES)
 
 # ============ MÁS TARDE ============
 
@@ -20,9 +20,22 @@ class Tren:
 		
 		self.trayectos = trayectos # [ [paradas, ruta, llegadas , salidas], ... ] Array de arrays contiene las paradas (ids de las ciudades), la ruta a seguir (tal y como está en rutasActuales), llegadas y salidas de cada tren (pueden haber varios a la vez con rutas diferentes)
 
+class Ciudad:
+	def __init__(self, id, nombre, x, y):
+		self.id = id
+		self.nombre = nombre
+		self.x = x
+		self.y = y
+
 # --------- VARIABLES ---------
 
-trenesF = "Trenes.json" # Nombre del archivo en el que se escriben
+horariosF = "Horarios.xlsx" # Nombre del archivo en el que se leen los horarios
+
+ciudadesF = "Ciudades.json" # Nombre des archivo en el que se leen las ciudades para verificar
+trenesF = "Trenes.json" # Nombre del archivo en el que se leen y guardan los trenes
+
+finalciudades = [] # Finalciudades como en los otros scripts
+
 finaltrenes = [] # Finaltrenes como en los otros scripts
 trenesEscribir = [] # Finaltrenes para ser escrito
 
@@ -32,80 +45,114 @@ def int2hora(horaInt):
     temp = str(horaInt)
     return ('0' * (4 - len(temp))) + temp
 
-# --------- CARGAR TRENES ---------
+def cargarTrenes():
+	global finaltrenes
+	
+	print("Cargando trenes")
+	
+	try:
+		f = open(trenesF, 'r')
+		data = json.loads(f.read())
+		
+		for i in data: # Meter trenes en la lista
+			finaltrenes.append(Tren(i['id'], i['nombre'], i['color'], i['trayectos']))
+		
+		f.close()
+	except JSONDecodeError:
+		print("Error leyendo los trenes")
+		pass
+	
+	print(len(finaltrenes), "trenes cargados")
 
-try:
-	f = open(trenesF, 'r')
-	data = json.loads(f.read())
+def cargarCiudades():
+	global canvas, finalciudades
 	
-	for i in data: # Meter trenes en la lista
-		finaltrenes.append(Tren(i['id'], i['nombre'], i['color'], i['trayectos']))
+	print("Cargando ciudades")
 	
-	f.close()
-	print("Lectura completada con exito")
-except JSONDecodeError:
-	print("Error leyendo el JSON")
-	pass
+	try:
+		f = open(ciudadesF, 'r')
+		data = json.loads(f.read())
+		
+		for i in data: # Dibujar ciudades
+			temp = Ciudad(i['id'], i['nombre'], i['x'], i['y'])
+			finalciudades.append(temp)
+		
+		f.close()
+	except JSONDecodeError:
+		print("Error leyendo las ciudades")
+		pass
+	
+	print(len(finalciudades), "ciudades cargadas")
 
-workbook = openpyxl.load_workbook('Horarios.xlsx', data_only = True)
+def procesarTrenes():
+	for i in tqdm(range(len(finaltrenes)), unit = "Trenes"): # Bucle que pasa por todos los trenes ya existentes
+		sheet = workbook[finaltrenes[i].nombre]
+		
+		horariosIda = copy.deepcopy(finaltrenes[i].trayectos[0])
 
-# Bucle que pasa por todos los trenes ya existentes
-for i in tqdm(range(len(finaltrenes)), unit = "Trenes"):
-	sheet = workbook[finaltrenes[i].nombre]
-	
-	horariosIda = copy.deepcopy(finaltrenes[i].trayectos[0])
+		horariosVuelta = copy.deepcopy(finaltrenes[i].trayectos[0])
+		horariosVuelta[0] = horariosVuelta[0][::-1]
+		horariosVuelta[1] = horariosVuelta[1][::-1]
+		
+		trenesEscribir.append(Tren(finaltrenes[i].id, finaltrenes[i].nombre, finaltrenes[i].color, [])) # Crear un trayecto vacio
+		trenesEscribir[i].trayectos.append(copy.deepcopy(horariosIda))
+		trenesEscribir[i].trayectos.append(copy.deepcopy(horariosVuelta))
+		
+		if (sheet == None): continue # Si no existe una hoja con el nombre del tren -> ignorar (TODO : AÑADIR EL TREN AUNQUE NO ESTE EN EL EXCEL)
+		
+		# TODO : MIRAR AQUI SI TODO ESTA OK
+		
+		# Leer valores para empezar el trayecto de ida
+		start_col = sheet.cell(row = 1, column = 1).value
+		end_col = sheet.cell(row = 1, column = 2).value
+		start_row = sheet.cell(row = 1, column = 3).value
+		end_row = sheet.cell(row = 1, column = 4).value
+		
+		for col in range(start_col, end_col + 1, 2):
+			tiempoLleg = []
+			tiempoSali = []
+			
+			for row in range(start_row, end_row + 1):
+				tiempoLleg.append(int2hora(sheet.cell(row = row, column = col).value))
+				tiempoSali.append(int2hora(sheet.cell(row = row, column = col + 1).value))
+			
+			curr = copy.deepcopy(horariosIda)
+			curr[2] = copy.deepcopy(tiempoLleg)
+			curr[3] = copy.deepcopy(tiempoSali)
+			
+			trenesEscribir[i].trayectos.append(copy.deepcopy(curr))
+		
+		# Leer valores para empezar el trayecto de vuelta
+		start_col = sheet.cell(row = 1, column = 5).value
+		end_col = sheet.cell(row = 1, column = 6).value
+		start_row = sheet.cell(row = 1, column = 7).value
+		end_row = sheet.cell(row = 1, column = 8).value
+		
+		for col in range(start_col, end_col + 1, 2):
+			tiempoLleg = []
+			tiempoSali = []
+			
+			for row in range(start_row, end_row + 1):
+				tiempoLleg.append(int2hora(sheet.cell(row = row, column = col).value))
+				tiempoSali.append(int2hora(sheet.cell(row = row, column = col + 1).value))
+			
+			curr = copy.deepcopy(horariosVuelta)
+			curr[2] = copy.deepcopy(tiempoLleg)
+			curr[3] = copy.deepcopy(tiempoSali)
+			
+			trenesEscribir[i].trayectos.append(copy.deepcopy(curr))
 
-	horariosVuelta = copy.deepcopy(finaltrenes[i].trayectos[0])
-	horariosVuelta[0] = horariosVuelta[0][::-1]
-	horariosVuelta[1] = horariosVuelta[1][::-1]
-	
-	trenesEscribir.append(Tren(finaltrenes[i].id, finaltrenes[i].nombre, finaltrenes[i].color, [])) # Crear un trayecto vacio
-	trenesEscribir[i].trayectos.append(copy.deepcopy(horariosIda))
-	trenesEscribir[i].trayectos.append(copy.deepcopy(horariosVuelta))
-	
-	if (sheet == None): continue # Si no existe una hoja con el nombre del tren -> ignorar (TODO : AÑADIR EL TREN AUNQUE NO ESTE EN EL EXCEL)
-	
-	# TODO : MIRAR AQUI SI TODO ESTA OK
-	
-	# Leer valores para empezar el trayecto de ida
-	start_col = sheet.cell(row = 1, column = 1).value
-	end_col = sheet.cell(row = 1, column = 2).value
-	start_row = sheet.cell(row = 1, column = 3).value
-	end_row = sheet.cell(row = 1, column = 4).value
-	
-	for col in range(start_col, end_col + 1, 2):
-		tiempoLleg = []
-		tiempoSali = []
-		
-		for row in range(start_row, end_row + 1):
-			tiempoLleg.append(int2hora(sheet.cell(row = row, column = col).value))
-			tiempoSali.append(int2hora(sheet.cell(row = row, column = col + 1).value))
-		
-		curr = copy.deepcopy(horariosIda)
-		curr[2] = copy.deepcopy(tiempoLleg)
-		curr[3] = copy.deepcopy(tiempoSali)
-		
-		trenesEscribir[i].trayectos.append(copy.deepcopy(curr))
-	
-	# Leer valores para empezar el trayecto de vuelta
-	start_col = sheet.cell(row = 1, column = 5).value
-	end_col = sheet.cell(row = 1, column = 6).value
-	start_row = sheet.cell(row = 1, column = 7).value
-	end_row = sheet.cell(row = 1, column = 8).value
-	
-	for col in range(start_col, end_col + 1, 2):
-		tiempoLleg = []
-		tiempoSali = []
-		
-		for row in range(start_row, end_row + 1):
-			tiempoLleg.append(int2hora(sheet.cell(row = row, column = col).value))
-			tiempoSali.append(int2hora(sheet.cell(row = row, column = col + 1).value))
-		
-		curr = copy.deepcopy(horariosVuelta)
-		curr[2] = copy.deepcopy(tiempoLleg)
-		curr[3] = copy.deepcopy(tiempoSali)
-		
-		trenesEscribir[i].trayectos.append(copy.deepcopy(curr))
+# --------- INIT FUNCTS ---------
+
+cargarTrenes()
+cargarCiudades()
+
+workbook = openpyxl.load_workbook(horariosF, data_only = True) # Cargar los horarios en el Excel
+
+if (len(finaltrenes) > 0 and len(finalciudades) > 0): # Sanity check
+	procesarTrenes()
+else:
+	quit()
 
 # --------- GUARDAR TRENES ---------
 

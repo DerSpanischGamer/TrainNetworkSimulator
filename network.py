@@ -14,7 +14,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ============ EN DESARROLLO ============
 
-# TODO : ARREGLAR RELOJ
+# ERROR : DISTANCIA = 0 EN LINEA 202 ??? WTF
+
+# ============ MÁS TARDE ============
+
+# TODO : ACABAR EL RELOJ
 
 # ------------ CLASES ------------
 
@@ -157,10 +161,11 @@ def actualizarTrenes():
 			del tren.initH[0] # Eliminar la parada de llegada ya que ya estamos en la parada
 			del tren.fintH[0]
 			
-			i = 1
-			while (tren.ruta[i][0] == -1):	i += 1
-			
-			del tren.ruta[0:i]
+			if (len(tren.ruta) > 1): # No tiene que desaparecer
+				i = 1
+				while (tren.ruta[i][0] == -1):	i += 1
+				
+				del tren.ruta[0:i]
 
 	for i in range(len(trenes), 0, -1):		# Mirar si hay trenes que se tienen que despawnear : recorrer la lista al reves para ir borrando
 		if (len(trenes[i - 1].fintH) == 1 and horaAct == trenes[i - 1].fintH[0]):
@@ -197,9 +202,13 @@ def calcularPosiciones():
 				disRec += distancia(tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1], tren.ruta[i][1][0], tren.ruta[i][1][1])
 				i += 1
 			
-			dist = distancia(tren.ruta[i - 2][1][0], tren.ruta[i - 2][1][1], tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1])
+			print(tren.color, tren.ruta[i - 2][1][0], tren.ruta[i - 2][1][1], tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1])
+			dist = distancia(tren.ruta[i - 2][1][0], tren.ruta[i - 2][1][1], tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1]) # Distancia entre la parada actual y la proxima parada
 			
-			perc = (disRec - disAct) / dist # Porcentaje de distancia recorrida en pixeles
+			if (dist != 0):
+				perc = (disRec - disAct) / dist # Porcentaje de distancia recorrida en pixeles
+			else:
+				perc = 1
 			
 			x = tren.ruta[i - 1][1][0] + perc * (tren.ruta[i - 2][1][0] - tren.ruta[i - 1][1][0])
 			y = tren.ruta[i - 1][1][1] + perc * (tren.ruta[i - 2][1][1] - tren.ruta[i - 1][1][1])
@@ -255,8 +264,6 @@ def main():
 	
 	dibujarFotograma()
 
-# ==================== INIT FUNCTIONS ====================
-
 def cargarCiudades():
 	global ciudades
 	
@@ -310,12 +317,37 @@ def cargarTrenes():
 	
 	print(len(finaltrenes), "trenes cargados")
 
+def verificarTrenes(): # Verificar que un tren no se para en dos puntos seguidos
+	global finaltrenes
+	
+	error = False
+	
+	for linea in finaltrenes:
+		for trayecto in linea.trayectos:
+			for i in range(len(trayecto[1]) - 1):
+				if (trayecto[1][i][1][0] == trayecto[1][i + 1][1][0] and trayecto[1][i][1][1] == trayecto[1][i + 1][1][1]):
+					print("Ruta invalida en linea", linea.nombre, "posicion", i)
+					print(trayecto[1][i][0], trayecto[1][i][1][0], trayecto[1][i][1][1])
+					print(trayecto[1][i+1][0], trayecto[1][i+1][1][0], trayecto[1][i+1][1][1])
+					error = True
+	
+	if (error):
+		quit()
+
+# ==================== INIT FUNCTIONS ====================
+
+# Cargar datos
+print("Cargando datos")
 cargarCiudades()
 print()
 cargarRutas()
 print()
 cargarTrenes()
 print()
+
+# Verificar datos
+print("Verificando datos")
+verificarTrenes()
 
 main()
 

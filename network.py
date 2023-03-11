@@ -14,11 +14,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ============ EN DESARROLLO ============
 
-# ERROR : DISTANCIA = 0 EN LINEA 202 ??? WTF
+# TODO : REPARAR EL RELOJ
 
 # ============ MÁS TARDE ============
-
-# TODO : ACABAR EL RELOJ
 
 # ------------ CLASES ------------
 

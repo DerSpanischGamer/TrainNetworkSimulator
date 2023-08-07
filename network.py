@@ -14,8 +14,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ============ EN DESARROLLO ============
 
-# TODO : REPARAR EL RELOJ
-
 # ============ MÁS TARDE ============
 
 # ------------ CLASES ------------
@@ -84,6 +82,12 @@ borrarArchivos = True # Define si se tienen que borrar archivos una vez se haya 
 
 # ------------ FUNCIONES ------------
 
+def formatHora(): # Devuelve la hora en formato xxhyy
+	global horaAct
+	hora = '0'*(2 - len(str(horaAct // 100))) + str(horaAct // 100)
+	minuto = '0'*(2 - len(str(horaAct % 100))) + str(horaAct % 100)
+	return hora + 'h' + minuto
+
 def horaInc(hora): # Incrementar la hora
 	hora += 1
 	if ( (hora - (hora // 100)*100) % 60 == 0): hora += 40 # Pasar de 0060 a 0100
@@ -112,27 +116,26 @@ def diferenciaHoras(h0, h1): # Devuelve la diferencia en minutos [ h1 > h0 ]
 	
 	return hora2mins(h1) - hora2mins(h0)
 
-def dibujarReloj():  # x, y son el centro del reloj
+def dibujarReloj():
 	global draw, horaAct
 	
 	# Definir las propiedades del reloj
 	hora = horaAct // 100
 	minuto = horaAct - (hora * 100)
 	
-	relojTam = (256, 256)
-	relojCent = (relojTam[0] // 2, relojTam[1] // 2)
+	relojTam = 256
+	relojCent = relojTam // 2
 	
-	horaLen = 0.4 * relojTam[0]
-	minuLen = 0.45 * relojTam[0]
+	horaLen = 0.32 * relojTam
+	minuLen = 0.45 * relojTam
 	
-	mark_length = 0.1 * relojTam[0]
+	mark_length = 0.1 * relojTam
 	
 	# Dibujar las marcas del reloj
 	for i in range(4):
 		angulo = i * math.pi / 2
 		dx = mark_length * math.cos(angulo)
 		dy = mark_length * math.sin(angulo)
-		draw.line((relojCent[0]+dx, relojCent[1]+dy, relojCent[0]-dx, relojCent[1]-dy), fill='black', width=2)
 	
 	# Calcular los angulos
 	angHora = 2 * math.pi * (hora / 12.0 + minuto / 720.0) - (math.pi / 2)
@@ -144,9 +147,25 @@ def dibujarReloj():  # x, y son el centro del reloj
 	minute_dy = minuLen * math.sin(angMinuto)
 	
 	# Dibujar las manillas del reloj
-	draw.line((relojCent[0], relojCent[1], relojCent[0]+hour_dx, relojCent[1]+hour_dy), fill='black', width=4)
-	draw.line((relojCent[0], relojCent[1], relojCent[0]+minute_dx, relojCent[1]+minute_dy), fill='black', width=2)
-	draw.ellipse((0, 0, relojTam[0]-1, relojTam[1]-1), outline='black', width=2)
+	draw.line((relojCent, relojCent, relojCent + hour_dx, relojCent + hour_dy), fill = 'black', width = 12)		# Horas 
+	draw.line((relojCent, relojCent, relojCent + minute_dx, relojCent + minute_dy), fill = 'black', width = 8)	# Minutos
+	draw.ellipse((0, 0, relojTam - 1, relojTam - 1), outline = 'black', width = 2)								# Circulo
+	
+	# Dibujar las marcas del reloj (minutos)
+	barraLen = - relojCent / 10
+	angle = 2 * math.pi / 60
+	
+	points = [(relojCent + int(relojCent * math.cos(angle * i)),  relojCent - int(relojCent * math.sin(angle * i)), relojCent + int((relojCent + barraLen) * math.cos(angle * i)), relojCent - int((relojCent + barraLen) * math.sin(angle * i))) for i in range(60)]
+	for x1, y1, x2, y2 in points:
+		draw.line((x1, y1, x2, y2), fill = 'black', width = 4)
+	
+	# Dibujar las marcas del reloj (horas)
+	barraLen = - relojCent / 4
+	angle = 2 * math.pi / 12
+	
+	points = [(relojCent + int(relojCent * math.cos(angle * i)),  relojCent - int(relojCent * math.sin(angle * i)), relojCent + int((relojCent + barraLen) * math.cos(angle * i)), relojCent - int((relojCent + barraLen) * math.sin(angle * i))) for i in range(12)]
+	for x1, y1, x2, y2 in points:
+		draw.line((x1, y1, x2, y2), fill = 'black', width = 6)
 
 def actualizarTrenes():
 	global finaltrenes, trenes, horaAct
@@ -200,7 +219,6 @@ def calcularPosiciones():
 				disRec += distancia(tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1], tren.ruta[i][1][0], tren.ruta[i][1][1])
 				i += 1
 			
-			print(tren.color, tren.ruta[i - 2][1][0], tren.ruta[i - 2][1][1], tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1])
 			dist = distancia(tren.ruta[i - 2][1][0], tren.ruta[i - 2][1][1], tren.ruta[i - 1][1][0], tren.ruta[i - 1][1][1]) # Distancia entre la parada actual y la proxima parada
 			
 			if (dist != 0):
@@ -219,7 +237,6 @@ def dibujarFotograma():
 	frames = [i for i in range(int(FPS * SPM * diferenciaHoras(initH, fintH)))] # Hacer una lista de todos los frames
 	
 	for i in tqdm(frames, unit = 'Fotogramas'):
-	#for i in frames:
 		frame = fotograma.copy()
 		draw = ImageDraw.Draw(frame)
 		
@@ -231,12 +248,11 @@ def dibujarFotograma():
 		
 		font = ImageFont.truetype("arial.ttf",  48)
 		dibujarReloj()
-		draw.text((256, 128), str(horaAct), "#000000", font = font)
+		draw.text((256, 128), formatHora(), "#000000", font = font)
 
 		frame.save("output/" + str(i) + "_Suiza.png")		# Guardar el fotograma
 		draw = None
-	
-	
+		
 	print("Acabado")
 
 def prepararFondo():

@@ -66,9 +66,9 @@ selec = None # Ventana donde se selecciona una de las rutas
 lineaRuta = None # Ruta en verde que muestra por donde va a ir el tren
 rutaSelect = None # OptionMenu para seleccionar la ruta
 proponerAlt = False # Proponer una ruta inderecta si se ha encontrado una ruta directa
-rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [ paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
+rutasActuales = [[]] # Array de array en el que se guarda la ruta con las paradas de cada array [paradas ; puntos] si un punto no corresponde a ninguna parada, entonces la parada tiene -1. Los dos arrays tienen la misma longitud
 
-tipo = 0 # Continue el tipo de parada que es : 0 = primera parada ; 1 = entre dos paradas ;  2 = ultima parada
+tipo = 0 # Continue el tipo de parada que es : 0 = primera parada ; 1 = entre dos paradas ; 2 = ultima parada
 posTop = None # Ventana donde se va a mostrar el OptionMenu con todas las opciones
 lineaTemp = None # La linea que se ha seleccionado
 posiblesRutas = [] # Rutas propuestas entre dos puntos para el trayecto de un tren (solo contienen las posiciones de cada punto de la linea)
@@ -1023,11 +1023,15 @@ def borrarHorario():
 	
 	pre = posActual
 	
-	if (posActual > 0): cambiarHorario(-1)
-	else: cambiarHorario(1)
-	
-	del trayectosActuales[pre]
-	del rutasActuales[pre]
+	if (posActual > 0):
+		cambiarHorario(-1)
+		del trayectosActuales[pre]
+		del rutasActuales[pre]
+	else:
+		cambiarHorario(1)
+		del trayectosActuales[pre]
+		del rutasActuales[pre]
+		cambiarHorario(-1)
 	
 	cambiarHorario(0)
 
@@ -1300,6 +1304,8 @@ def trenElegido(value):
 	pos = getTren(value)
 	idTedit = finaltrenes[pos].id
 	
+	print("Cargando el horario de", finaltrenes[pos].nombre)
+	
 	if (lineaRuta != None): canvas.delete(lineaRuta)
 	
 	posActual = 0
@@ -1323,8 +1329,6 @@ def trenElegido(value):
 		dibujarLineaRuta()
 		
 		if (i != len(finaltrenes[pos].trayectos) - 1): cambiarHorario(1, False)
-	
-	borrarHorario()
 	
 	Button(top, text = "Guardar", command = guardarTren).place(x = 175, y = 575)
 	
@@ -1573,6 +1577,8 @@ def cargarTrenes():
 		
 		for i in data: # Meter trenes en la lista
 			finaltrenes.append(Tren(i['id'], i['nombre'], i['color'], i['trayectos']))
+		
+		print(finaltrenes[0].trayectos[-1][3])
 		
 		f.close()
 	except JSONDecodeError:

@@ -10,8 +10,6 @@ from json.decoder import JSONDecodeError
 
 # ============ EN DESARROLLO ============
 
-# TODO : ACEPTAR LINEAS QUE A VECES SE SALTAN PARADAS (TIPO IC61)
-
 # ============ MÁS TARDE ============
 
 # --------- CLASES ---------
@@ -225,6 +223,8 @@ def procesarTrenes():
 						print("La parada no se ha encontrado en la ruta. Saliendo"	)
 						quit()
 					else: curr[1][pos][0] = -1	# Anotar en la ruta que ya no es una parada si no una ruta de paso
+					
+					continue
 				elif (salida <= llegada):
 					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break
@@ -276,6 +276,8 @@ def procesarTrenes():
 						print("La parada no se ha encontrado en la ruta. Saliendo"	)
 						quit()
 					else: curr[1][pos][0] = -1	# Anotar en la ruta que ya no es una parada si no una ruta de paso
+					
+					continue
 				elif (salida <= llegada):
 					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break

@@ -137,7 +137,7 @@ root.resizable(False, False)
 
 # --------- FUNCIONES ---------
 
-def create_circle(x, y, r, canvas): # Dibujar un circulo con coords centro y radio
+def hacerCirculo(x, y, r, canvas): # Dibujar un circulo con coords centro y radio
 	x0 = x - r
 	y0 = y - r
 	x1 = x + r
@@ -568,7 +568,7 @@ def click(event):
 	if (len(lineas) >= 1 and coords[0] == lineas[-1][0] and coords[1] == lineas[-1][1]): return
 	
 	paradas.append(-1)
-	circulos.append(create_circle(event.x, event.y, 3, canvas)) # Añadir circulo del lugar actual
+	circulos.append(hacerCirculo(event.x, event.y, 3, canvas)) # Añadir circulo del lugar actual
 	
 	lineas.append(coords) # Si no se ha seleccionado una ciudad, entonces se crea un circulo para poder mover (no pasa con lineas nuevas)
 	
@@ -621,7 +621,7 @@ def editar(event):
 				eraCiudad = False
 				
 				if (finalrutas[r].paradas[i] != -1): # El punto que se ha seleccionado es una parada
-					rutas[r].circulos[i] = create_circle(event.x, event.y, 3, canvas) # Crear un circulo visto que ya no es una parada, si no un punto de inflexion de la ruta
+					rutas[r].circulos[i] = hacerCirculo(event.x, event.y, 3, canvas) # Crear un circulo visto que ya no es una parada, si no un punto de inflexion de la ruta
 					
 					finalrutas[r].paradas[i] = -1 # Decir que la parada anterior ya no es una parada
 					
@@ -638,7 +638,7 @@ def editar(event):
 				finalrutas[r].ruta.insert(i, [event.x, event.y]) # Insertar la posicion actual en la lista
 				finalrutas[r].paradas.insert(i, -1) # Decir que el punto que acabamos de insertar no es una parada
 				
-				rutas[r].circulos.insert(i, create_circle(event.x, event.y, 3, canvas)) # Poner un ciculo visto que no es una parada
+				rutas[r].circulos.insert(i, hacerCirculo(event.x, event.y, 3, canvas)) # Poner un ciculo visto que no es una parada
 				
 				moviendo = [r, i] # Indicar el punto que estamos moviendo visto que ya ha sido integrado en la lista
 				
@@ -713,7 +713,7 @@ def mmove(event):
 		canvas.delete(rutas[moviendo[0]].linea)
 		canvas.delete(rutas[moviendo[0]].circulos[moviendo[1]])
 		
-		rutas[moviendo[0]].circulos[moviendo[1]] = create_circle(event.x, event.y, 3, canvas)
+		rutas[moviendo[0]].circulos[moviendo[1]] = hacerCirculo(event.x, event.y, 3, canvas)
 		
 		dibujarLinea()
 		
@@ -793,7 +793,7 @@ def borrarItem(event): # Borrar una ruta entera
 			for i in range(len(finalrutas[r].paradas)):
 				if (finalrutas[r].paradas[i] == finalciudades[moviendoC[0]].id):
 					finalrutas[r].paradas[i] = -1
-					rutas[r].circulos[i] = create_circle(finalrutas[r].ruta[i][0], finalrutas[r].ruta[i][1], 3, canvas)
+					rutas[r].circulos[i] = hacerCirculo(finalrutas[r].ruta[i][0], finalrutas[r].ruta[i][1], 3, canvas)
 					
 			rutas[r].ruta = copy.deepcopy(finalrutas[r]) # Copiar just in case
 		
@@ -1558,7 +1558,7 @@ def cargarRutas():
 				if (temp.paradas[i] != -1):
 					tempC.append(-1) # Añadir un circulo vacio
 					continue
-				tempC.append(create_circle(temp.ruta[i][0], temp.ruta[i][1], 3, canvas))
+				tempC.append(hacerCirculo(temp.ruta[i][0], temp.ruta[i][1], 3, canvas))
 			
 			rutas.append(LineaDibujada(temp, canvas.create_line(temp.ruta), tempC))
 		

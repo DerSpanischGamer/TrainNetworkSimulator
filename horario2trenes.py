@@ -14,8 +14,6 @@ from json.decoder import JSONDecodeError
 
 # ============ MÁS TARDE ============
 
-# TODO : NO COPAR EL PRIMER TRAYECTO DE IDA Y SOLO INVERTIRLO (LIKE BRUH) POR LO MENOS BORRARLO, YA QUE LOS HORARIOS ESTAN MAL (creo que ya ha sido resuelto)
-
 # --------- CLASES ---------
 
 class Tren:
@@ -53,6 +51,12 @@ def getCiudadfromId(id): 	# Devuelve la ciudad desde una id
 			return c
 	return None
 
+def getPosParadaRuta(idP, ruta):	# Devuelve la posicion de la parada con id "idP" en la ruta "ruta" (trayecto[1]) 
+	for r in range(len(ruta)):
+		if (idP == ruta[r][0]): return r
+	
+	return -1
+
 def idC2ciudades(ids): 		# Recibe un array con ids de ciudades y devuelve un array con los nombres de las ciudades
 	temp = []
 	for id in ids:
@@ -65,8 +69,9 @@ def idC2ciudades(ids): 		# Recibe un array con ids de ciudades y devuelve un arr
 	return temp
 
 def int2hora(horaInt):
-    temp = str(horaInt)
-    return ('0' * (4 - len(temp))) + temp
+	if(horaInt == None): return None
+	temp = str(horaInt)
+	return ('0' * (4 - len(temp))) + temp
 
 def cargarCiudades():
 	global canvas, finalciudades
@@ -179,9 +184,8 @@ def procesarTrenes():
 			sheet = workbook.create_sheet(finaltrenes[i].nombre)	# Crear la hoja si no existe
 			continue
 		
-		
 		# Crear la base de los horarios de vuelta (lo mismo que de ida pero al reves)
-		horariosVuelta = copy.deepcopy(finaltrenes[i].trayectos[0])	# Los trayectos de vuelta son iguales que los de ida, excepto que se invierte el orden de las paradas TODO : DONT ? ESTO LO QUE HACE ES AÑADIR UN TRAYECTO CON EL *MISMO* HORARIO QUE EL PRIMER TRAYECTO DE IDA
+		horariosVuelta = copy.deepcopy(finaltrenes[i].trayectos[0])	# Los trayectos de vuelta son iguales que los de ida, excepto que se invierte el orden de las paradas
 		horariosVuelta[0] = horariosVuelta[0][::-1] # Invertir las paradas
 		horariosVuelta[1] = horariosVuelta[1][::-1] # Invertir la ruta
 		
@@ -204,13 +208,32 @@ def procesarTrenes():
 			continue
 		
 		for col in range(start_col, end_col, 2):
+			curr = copy.deepcopy(horariosIda)	# Resetear el horario de ida por si se han borrado paradas
+			
 			tiempoLleg = []
 			tiempoSali = []
 			
 			for row in range(start_row, end_row + 1):
-				tiempoLleg.append(int2hora(sheet.cell(row = row, column = col).value))
-				tiempoSali.append(int2hora(sheet.cell(row = row, column = col + 1).value))
-			
+				llegada = int2hora(sheet.cell(row = row, column = col).value)
+				salida = int2hora(sheet.cell(row = row, column = col + 1).value)
+				
+				if (salida == None and llegada == None):
+					idParada = curr[0].pop(row - start_row)		# Quitar la parada de la lista de paradas del trayecto
+					pos = getPosParadaRuta(idParada, curr[1])
+					
+					if (pos == -1):
+						print("La parada no se ha encontrado en la ruta. Saliendo"	)
+						quit()
+					else: curr[1][pos][0] = -1	# Anotar en la ruta que ya no es una parada si no una ruta de paso
+				elif (salida <= llegada):
+					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
+					break
+				
+				# TODO : MAYBE DO SOME SANITY CHECK THAT EITHER salida NOR llegada ARE None ON THEIR OWN
+				
+				tiempoLleg.append(llegada)
+				tiempoSali.append(salida)
+				
 			curr[2] = copy.deepcopy(tiempoLleg)
 			curr[3] = copy.deepcopy(tiempoSali)
 			trenesEscribir[i].trayectos.append(copy.deepcopy(curr))
@@ -235,6 +258,8 @@ def procesarTrenes():
 			continue
 		
 		for col in range(start_col, end_col, 2):
+			curr = copy.deepcopy(horariosVuelta)	# Resetear el horario de vuelta por si se han borrado paradas
+				
 			tiempoLleg = []
 			tiempoSali = []
 			
@@ -242,9 +267,20 @@ def procesarTrenes():
 				llegada = int2hora(sheet.cell(row = row, column = col).value)
 				salida  = int2hora(sheet.cell(row = row, column = col + 1).value)
 				
-				if (salida <= llegada):
+				
+				if (salida == None and llegada == None):
+					idParada = curr[0].pop(row - start_row)		# Quitar la parada de la lista de paradas del trayecto
+					pos = getPosParadaRuta(idParada, curr[1])
+					
+					if (pos == -1):
+						print("La parada no se ha encontrado en la ruta. Saliendo"	)
+						quit()
+					else: curr[1][pos][0] = -1	# Anotar en la ruta que ya no es una parada si no una ruta de paso
+				elif (salida <= llegada):
 					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break
+				
+				# TODO : MAYBE DO SOME SANITY CHECK THAT EITHER salida NOR llegada ARE None ON THEIR OWN
 				
 				tiempoLleg.append(llegada)
 				tiempoSali.append(salida)

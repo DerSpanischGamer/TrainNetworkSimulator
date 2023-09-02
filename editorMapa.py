@@ -6,12 +6,11 @@
 
 # ============ EN DESARROLLO ============
 
-# ERROR : CUANDO SE LE DA A GUARDAR TREN MUESTRA SIEMPRE 9 TRENES, A LO MEJOR DEBERIA MOSTRAR : "Horario guardado"
+# TODO : PROBAR paradaSeleccionada CON nuevo = True Y UN CAMINO CON VARIAS RUTAS PARA VER QUE PASA
 
 # ============ MÁS TARDE ============
 
 # TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL - LO QUE HAY QUE HACER ES QUE CADA CIUDAD EN LA QUE SE PUEDA BUSCAR VA A DIVIDIRSE HASTA QUE : a) LLEGUE A LA CIUDAD DESEADA b) PASE POR LA MISMA CIUDAD 2 VECES
-# ERROR : CUANDO SE ESTA CREANDO UNA LINEA DE TREN, LO QUE SE MUESTRA NO ESTA BIEN - SE GUARDA  BIEN AL MENOS ? - Si, se guarda bien, problema de visualizacion entonces
 # ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA (ni idea de lo que habla)
 # ERROR : A VECES (NO REPLICABLE) CUANDO SE EDITA UNA RUTA Y SE BORRA UN PUNTO QUEDA UN CIRCULO Y HACE MIERDA CON LAS OTRAS
 
@@ -366,7 +365,7 @@ def mostrarRutas():
 	return None
 
 def getRutaPuntosRec(origen, destino, rDestin, visitadas = []): # Origen es la ciudad en la que nos encontramos, destino es el destino final, rDestin son las rutas que pasan por el destino (asi no hay que calcularlas siempre) y visitadas son las ciudades por las que ya hemos pasado
-	global finalrutas, finalciudades
+	global finalrutas, finalciudades # TODO : DO
 	
 	if (origen in visitadas): return None # Desde el punto de vista de la función : si la parada en la que estamos ya la hemos visitado, entonces salimos
 	
@@ -398,15 +397,15 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 			dst = ruta.paradas.index(destino)
 			
 			if (dst > org):
-				posiblesRutas.append(ruta.ruta[(org + 1):dst])       	 # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
+				posiblesRutas.append(ruta.ruta[org:dst])       	 # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
 			else:
-				posiblesRutas.append(ruta.ruta[dst:(org - 1)][::-1]) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
+				posiblesRutas.append(ruta.ruta[dst:org][::-1]) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
 			
 			puntoDivergencia.append("Directo")
 	
 	if (len(posiblesRutas) == 1 and not proponerAlt): return posiblesRutas
 	
-	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa
+	# Si estamos aqui es que no hay ruta directa por lo que buscar una ruta alternativa TODO : ES AQUI DONDE SE PUEDE HACER CON n INTERCAMBIOS
 	for rutaId in rOrigen:
 		rutaOr = finalrutas[getRutaId(rutaId)]
 		
@@ -917,23 +916,23 @@ def quitarParada(par, borrar = True):
 	
 	anadirParada.destroy()
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
-	anadirParada.place(x = 10, y = 95 + length*30)
+	anadirParada.place(x = 10, y = 95 + (length * 30))
 	
 	trayectoAnt.destroy()
 	trayectoAnt = Button(top, text = "Anterior", command = lambda : cambiarHorario(-1))
-	trayectoAnt.place(x = 110, y = 95 + length*30)
+	trayectoAnt.place(x = 110, y = 95 + (length * 30))
 	
 	trayectoSig.destroy()
 	trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
-	trayectoSig.place(x = 175, y = 95 + length*30)
+	trayectoSig.place(x = 175, y = 95 + (length * 30))
 	
 	trayectoDel.destroy()
 	trayectoDel = Button(top, text = "Borrar horario", command = borrarHorario)
-	trayectoDel.place(x = 240, y = 95 + length*30)
+	trayectoDel.place(x = 240, y = 95 + (length * 30))
 	
 	lineaDel.destroy()
 	lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
-	lineaDel.place(x = 330, y = 95 + length*30)
+	lineaDel.place(x = 330, y = 95 + (length * 30))
 	
 	if (borrar):
 		poss = quitarParadaRuta(par)
@@ -951,7 +950,7 @@ def quitarParada(par, borrar = True):
 	dibujarLineaRuta()
 
 def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos movemos en posActual -1 o +1
-	global top, trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, horarioAct, rutasActuales
+	global top, trayectosActuales, posActual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, horarioAct, rutasActuales
 	
 	for ruta in trayectosActuales[posActual]: # Esconder los elementos de la ruta que se estaba editando
 		for i in range(4):
@@ -975,15 +974,27 @@ def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos move
 			trayectoAnt.destroy()
 			trayectoSig.destroy()
 		
+		length = len(trayectosActuales[posActual])
+		
+		anadirParada.destroy()
 		anadirParada = Button(top, text = "Añadir parada", command = addParada)
-		anadirParada.place(x = 10, y = 95 + len(trayectosActuales[posActual])*30)
+		anadirParada.place(x = 10, y = 95 + (length * 30))
 		
+		trayectoAnt.destroy()
 		trayectoAnt = Button(top, text = "Anterior", command = lambda : cambiarHorario(-1))
-		trayectoAnt.place(x = 110, y = 95 + len(trayectosActuales[posActual])*30)
+		trayectoAnt.place(x = 110, y = 95 + (length * 30))
 		
+		trayectoSig.destroy()
 		trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
-		trayectoSig.place(x = 175, y = 95 + len(trayectosActuales[posActual])*30)
+		trayectoSig.place(x = 175, y = 95 + (length * 30))
 		
+		trayectoDel.destroy()
+		trayectoDel = Button(top, text = "Borrar horario", command = borrarHorario)
+		trayectoDel.place(x = 240, y = 95 + (length * 30))
+		
+		lineaDel.destroy()
+		lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
+		lineaDel.place(x = 330, y = 95 + (length * 30))
 	else: # Estamos "out of bounds" por lo que hay que crear una nueva posicion
 		if (posActual < 0):
 			posActual = 0
@@ -1010,7 +1021,7 @@ def borrarLinea():
 	
 	if (not respuesta): return
 	
-	if (getTrenId(idTedit) != None):	del finaltrenes[getTrenId(idTedit)] # Si la linea existia : borrarla
+	if (getTrenId(idTedit) != None): del finaltrenes[getTrenId(idTedit)] # Si la linea existia : borrarla
 	
 	escribirTrenes()
 	generarIdTren()
@@ -1123,8 +1134,8 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		posRuta = getRutaPuntos(finalciudades[getCiudad(trayectosActuales[posActual][parada[1] - 1][5].get())].id, parada[0])
 		
 		if (len(trayectosActuales[posActual]) > 1 and len(posRuta) > 0):
-			for i in range(len(posRuta) - 1):
-				rutasActuales[posActual].append([-1, posRuta[i]])
+			for i in range(len(posRuta[0]) - 1):
+				rutasActuales[posActual].append([-1, posRuta[0][i]])
 			
 		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir la posicion de la ciudad que hemos seleccionado con el [id [c_id, [c_x, c_y]]
 	else: # Si estamos aqui es porque se ha modificado una parada ya existente
@@ -1180,7 +1191,6 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 			
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
-			
 			if (len(posRuta) > 1):
 				mostrarPosiblesRutas(2)
 				return
@@ -1214,7 +1224,7 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 	length = len(trayectosActuales[posActual])
 	
 	dX = [10, 30, 250, 325]
-	dY = [93 + length*30, 90 + length*30, 95 + length*30, 95 + length*30]
+	dY = [93 + (length * 30), 90 + (length * 30), 95 + (length * 30), 95 + (length * 30)]
 	
 	posId = length
 	
@@ -1223,7 +1233,6 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 	trayectosActuales[posActual].append([]) # Crear una nueva parada
 	
 	# Añadir elementos
-	
 	trayectosActuales[posActual][-1].append(Button(top, text = "X", command = lambda a = posId : quitarParada(a)))
 	trayectosActuales[posActual][-1].append(OptionMenu(top, ciud, *ciuds, command = lambda a = posId : paradaSeleccionada(a, False)))
 	trayectosActuales[posActual][-1].append(Text(top, heigh = 1, width = 4))
@@ -1252,19 +1261,19 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 		lineaDel.destroy()
 	
 	anadirParada = Button(top, text = "Añadir parada", command = addParada)
-	anadirParada.place(x = 10, y = 125 + length*30)
+	anadirParada.place(x = 10, y = 125 + (length * 30))
 	
 	trayectoAnt = Button(top, text = "Anterior", command = lambda : cambiarHorario(-1))
-	trayectoAnt.place(x = 110, y = 125 + length*30)
+	trayectoAnt.place(x = 110, y = 125 + (length * 30))
 	
 	trayectoSig = Button(top, text = "Siguiente", command = lambda : cambiarHorario(1))
-	trayectoSig.place(x = 175, y = 125 + length*30)
+	trayectoSig.place(x = 175, y = 125 + (length * 30))
 	
 	trayectoDel = Button(top, text = "Borrar horario", command = borrarHorario)
-	trayectoDel.place(x = 240, y = 125 + length*30)
+	trayectoDel.place(x = 240, y = 125 + (length * 30))
 	
 	lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
-	lineaDel.place(x = 330, y = 125 + length*30)
+	lineaDel.place(x = 330, y = 125 + (length * 30))
 
 def elegirColorTren():
 	global colorTren

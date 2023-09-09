@@ -215,7 +215,7 @@ def procesarTrenes():
 				llegada = int2hora(sheet.cell(row = row, column = col).value)
 				salida = int2hora(sheet.cell(row = row, column = col + 1).value)
 				
-				if (salida == None and llegada == None):
+				if (salida == None and llegada == None):		# Saltar la parada
 					idParada = curr[0].pop(row - start_row)		# Quitar la parada de la lista de paradas del trayecto
 					pos = getPosParadaRuta(idParada, curr[1])
 					
@@ -228,8 +228,9 @@ def procesarTrenes():
 				elif (salida <= llegada):
 					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break
-				
-				# TODO : MAYBE DO SOME SANITY CHECK THAT EITHER salida NOR llegada ARE None ON THEIR OWN
+				elif ( (llegada == None and salida != None) or (llegada != None and salida == None)):
+					print("La salida O la llegada son None")
+					break
 				
 				tiempoLleg.append(llegada)
 				tiempoSali.append(salida)
@@ -268,7 +269,7 @@ def procesarTrenes():
 				salida  = int2hora(sheet.cell(row = row, column = col + 1).value)
 				
 				
-				if (salida == None and llegada == None):
+				if (salida == None and llegada == None):		# Saltar la parada
 					idParada = curr[0].pop(row - start_row)		# Quitar la parada de la lista de paradas del trayecto
 					pos = getPosParadaRuta(idParada, curr[1])
 					
@@ -281,8 +282,9 @@ def procesarTrenes():
 				elif (salida <= llegada):
 					print("Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break
-				
-				# TODO : MAYBE DO SOME SANITY CHECK THAT EITHER salida NOR llegada ARE None ON THEIR OWN
+				elif ( (llegada == None and salida != None) or (llegada != None and salida == None)):
+					print("La salida O la llegada son None")
+					break
 				
 				tiempoLleg.append(llegada)
 				tiempoSali.append(salida)

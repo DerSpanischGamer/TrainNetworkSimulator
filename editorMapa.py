@@ -6,12 +6,12 @@
 
 # ============ EN DESARROLLO ============
 
-# TODO : PROBAR paradaSeleccionada CON nuevo = True Y UN CAMINO CON VARIAS RUTAS PARA VER QUE PASA
+# TODO : ACABAR LA FUNCION seleccionarOpcion(1)
 
 # ============ MÁS TARDE ============
 
 # TODO : GENERALIZAR A n BUSQUEDAS : CREO QUE VA A HACER FALTA UN METODO RECURSIVO LOL - LO QUE HAY QUE HACER ES QUE CADA CIUDAD EN LA QUE SE PUEDA BUSCAR VA A DIVIDIRSE HASTA QUE : a) LLEGUE A LA CIUDAD DESEADA b) PASE POR LA MISMA CIUDAD 2 VECES
-# ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA (ni idea de lo que habla)
+# ERROR : CUANDO HAY MULTIPLES RUTAS, BORRA EL ULTIMO Y NO EL QUE DEBERIA (ni idea de lo que habla) - OK CRO QUE LO HE ENTENDIDO, SIGNIFICA QUE CUANDO SE TENIA QUE SELECCIONAR ENTRE VARIAS RUTAS BORRA LA ULTIMA (creo)
 # ERROR : A VECES (NO REPLICABLE) CUANDO SE EDITA UNA RUTA Y SE BORRA UN PUNTO QUEDA UN CIRCULO Y HACE MIERDA CON LAS OTRAS
 
 import copy
@@ -389,19 +389,20 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 	posiblesRutas.clear() # Todas las rutas que se puden tomar
 	puntoDivergencia.clear()
 	
-	for rutaId in rOrigen: # Primero mirar si hay una ruta que pasa por los dos
-		if rutaId in rDestin:
+	# Primero mirar si hay una ruta que pasa por los dos (origen y destino)
+	for rutaId in rOrigen: 
+		if (rutaId in rDestin):
 			ruta = finalrutas[getRutaId(rutaId)] # Existe la ruta directa
 			
 			org = ruta.paradas.index(origen)
 			dst = ruta.paradas.index(destino)
 			
 			if (dst > org):
-				posiblesRutas.append(ruta.ruta[org:dst])       	 # Devolver la ruta sin el origen ni el destino cada punto es [x, y]
+				posiblesRutas.append(ruta.ruta[org:dst])		# Devolver la ruta sin el origen ni el destino cada punto es [x, y]
 			else:
-				posiblesRutas.append(ruta.ruta[dst:org][::-1]) # Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
+				posiblesRutas.append(ruta.ruta[dst:org][::-1])	# Si se va al reves hay que llamar a la funcion reversed para que el orden sea correcto
 			
-			puntoDivergencia.append("Directo")
+			puntoDivergencia.append("Directo " + str(len(puntoDivergencia)))
 	
 	if (len(posiblesRutas) == 1 and not proponerAlt): return posiblesRutas
 	
@@ -410,12 +411,15 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 		rutaOr = finalrutas[getRutaId(rutaId)]
 		
 		for destId in rDestin:
+			if (destId in rOrigen): continue	# Ignorar rutas directas
+			
 			rutaDe = finalrutas[getRutaId(destId)]
 			
-			if (destId in rOrigen): continue
+			cpt = 0	# Contar cuantas veces se ha hecho una
 			
 			for parada in rutaOr.paradas:
-				if (parada == -1): continue
+				if (parada == -1): continue			# Ignorar los puntos de la ruta que no son paradas
+				if (parada == destino): continue	# Ignorar el destino
 				
 				if (parada in rutaDe.paradas):
 					org = rutaOr.paradas.index(origen)
@@ -426,13 +430,14 @@ def getRutaPuntos(origen, destino): # Devuelve una ruta (serie de puntos) entre 
 					temp = []
 					
 					# En el primer trayecto NO se incluye NI el origen NI el punto de intercambio   ;   En el ultimo punto NO se incluye el destino pero SI el punto de intercambio
-					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[(org + 1):vi1]]
+					if (vi1 > org):	[temp.append(r) for r in rutaOr.ruta[org:vi1]]
 					else:			[temp.append(r) for r in rutaOr.ruta[(vi1 + 1):(org - 1)][::-1]]
 					
 					if (vi2 > dst): [temp.append(r) for r in rutaDe.ruta[(dst + 1):(vi2 + 1)][::-1]]
 					else:			[temp.append(r) for r in rutaDe.ruta[vi2:dst]]
 					
-					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre)
+					puntoDivergencia.append("Via " + finalciudades[getCiudadId(parada)].nombre + " " + str(cpt) + " " + str(rutaOr.ruta[vi1 + 1][0]))
+					cpt = cpt + 1
 					posiblesRutas.append(temp)
 	
 	if (len(posiblesRutas) >= 1):
@@ -1101,7 +1106,7 @@ def mostrarPosiblesRutas(t): # t es cómo se tiene que incrustar la ruta una vez
 	
 	colorearLinea(puntoDivergencia[0]) # Dibujar la primera ruta cause why fucking not
 
-def seleccionarOpcion(): # Cuando se confirma una ruta a traver de una ruta or smth idk
+def seleccionarOpcion(): # Cuando se confirma una ruta a traves de una ruta or smth idk
 	global tipo, posActual, posProx, parada, rutasActuales, posibSelec, posiblesRutas, puntoDivergencia, linea
 	
 	posC = getCiudadId(parada[0])
@@ -1110,7 +1115,7 @@ def seleccionarOpcion(): # Cuando se confirma una ruta a traver de una ruta or s
 		rutasActuales[posActual].insert(0, [parada[0], [finalciudades[posC].x, finalciudades[posC].y]])
 		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(1 + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
 	elif (tipo == 1):
-		print("1") # ha ha gracias yo del pasado
+		print("1") # ha ha gracias yo del pasado - what the actual f ? TODO
 	else:
 		for i in range(len(posiblesRutas[posibSelec])):	rutasActuales[posActual].insert(posProx[1] + i, [-1, posiblesRutas[posibSelec][i]]) # Si es la primera posicion, no se borra ninguna parada
 		rutasActuales[posActual].append([parada[0], [finalciudades[posC].x, finalciudades[posC].y]]) # Añadir al final del todo la parada que se ha modificado	
@@ -1147,7 +1152,6 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		posProx = quitarParadaRuta(par)
 		
 		if (posProx[0] == None): # Hay que insertarla al principio
-			print(trayectosActuales[posActual][parada[1] + 1][0])
 			posRuta = getRutaPuntos(parada[0], finalciudades[getCiudad(trayectosActuales[posActual][parada[1] + 1][5].get())].id)
 			
 			if (len(posRuta) > 1):
@@ -1162,7 +1166,7 @@ def paradaSeleccionada(par, nuevo, index = None, value = None, auto = False): # 
 		elif (posProx[2] == None): # Hay que insertarla al final
 			posRuta = getRutaPuntos(rutasActuales[posActual][posProx[0]][0], parada[0])
 			
-			if (len(posRuta) > 1):
+			if (len(posRuta) > 1):	# ERROR : A VECES EL TIPO ES None (POR QUE)
 				mostrarPosiblesRutas(2)
 				return
 			

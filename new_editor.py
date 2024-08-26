@@ -1,8 +1,9 @@
-import math
+﻿import math
 import json
 from tkinter import *
 from copy import deepcopy
 from PIL import Image, ImageTk
+from tkinter import colorchooser
 
 # ========= VARIABLES =========
 
@@ -12,7 +13,7 @@ from PIL import Image, ImageTk
 
 top = None # Ventana extra para informaciones
 
-fondo = "Mapa.png"
+fondo = "Mapa_paradas.png"
 
 # . Lineas, puntos y circulos .
 
@@ -54,6 +55,30 @@ linea_temp = None # Linea temp
 rutas_con_ciudad = [] # Cuando se mueve una ciudad que tiene rutas -> aqui se guardan la posicion en rutas de las rutas que incluyen a la ciudad
 posicion_en_ruta = [] # Same, pero aqui se guarda la posicion de la ciudad que se esta moviendo en cada array rutas[rutas_con_ciudad].puntos
 
+# . Lineas .
+
+estado_linea = 0 # 0 = nada ; 1 = creando linea ; 2 = modificando linea
+
+linea_actual = None # Linea actual que se esta editando
+
+top_lin = None # Ventana de linea
+
+pos_trayecto = 0 # Posicion del trayecto en linea.trayectos[pos_trayecto] que se esta editando
+
+lin = None # String Var de las lineas disponibles
+selecLn = None # Dropdown menu para seleccionar linea existente
+nombreLin = None # Textbox con el nombre de la linea (nueva o existente)
+colorLinea = None # Colorpicker para el color de la linea
+trayecto_actual = None # Label con el numero del trayecto que estamos editando
+
+anadirParada = None # Boton añadir parada
+trayectoAnt = None # Boton trayecto anterior
+trayectoSig = None # Boton trayecto siguiente
+trayectoDel = None # Boton borrar trayecto
+lineaDel = None # Boton borrar linea
+
+botones_paradas = None # Clase en la que se guardaaran todos los botones
+
 # --- Status ---
 
 status = 0 # 0 = ciudades ; 1 = rutas ; 2 = trayectos
@@ -70,14 +95,17 @@ trenesF = "Trenes.json"
 
 ciudades = [] # Todas la ciudades en el mapa
 rutas = [] # Todas las rutas en el mapa
-trayectos = []
+lineas = [] # Todos los trayectos de trenes
 
 # --- Editor ---
 
 new_id_ciudad = -1 # Id para la proxima ciudad
 new_id_ruta = -1 # Id para la proxima ruta
+new_id_linea = -1 # Id para la proxima linea
 
 # ========= CLASES =========
+
+# . Data structures .
 
 class Ciudad:
 	def __init__(self, id, nombre, coords):
@@ -97,15 +125,30 @@ class Ruta:
 		self.puntos = puntos
 
 class Trayecto:
-	def __init__(self, id, punto, salidas, llegadas, color, nombre):
-		self.id = id
-		self.punto = punto
+	def __init__(self, puntos, salidas, llegadas):
+		self.puntos = puntos
 		
 		self.salidas = salidas
 		self.llegadas = llegadas
-		
-		self.color = color
+
+class Linea:
+	def __init__(self, id, nombre, color, trayectos):
+		self.id = id
 		self.nombre = nombre
+		self.color = color
+		
+		self.trayectos = trayectos
+
+# . Clases visuales .
+
+class Parada_visual:
+	def __init__(self, selector = [], llegadas = [], salidas = [], quitar = None):
+		self.selector = selector
+		
+		self.llegadas = llegadas
+		self.salidas = salidas
+		
+		self.quitar = quitar
 
 # ========= FUNCIONES =========
 
@@ -120,20 +163,27 @@ myimg = ImageTk.PhotoImage(Image.open(fondo))
 canvas.create_image(0, 0, image = myimg, anchor = NW) # Put the image in the frame
 
 canvas.create_text(50, 50, text = "Creador de rutas", fill = "black", font = ('Helvetica 15'), justify = "left", anchor="w")
-canvas.create_text(50, 75, text = "C : Añadir / modificar ciudades  R : Crear / modificar rutas  T : Crear / modificar trayectos", fill = "black", font = ('Helvetica 15'), justify = "left", anchor="w")
+canvas.create_text(50, 75, text = "C : Añadir / modificar ciudades  R : Crear / modificar rutas  L : Crear / modificar lineas", fill = "black", font = ('Helvetica 15'), justify = "left", anchor="w")
 texto_status = canvas.create_text(50, 100, text = "Actualmente : editando ciudades", fill = "black", font = ('Helvetica 15'), justify = "left", anchor="w")
 
 root.resizable(False, False)
 
 canvas.pack()
 
-# --- Low-level functions ---
+# --- Funciones de base ---
+
+def beautifyTiempo(txt):
+	return "0" * (4 - len(txt)) + txt # Devuelve la hora con ceros delante
+
+# . Calcular distancias .
 
 def calcular_distancia(coords1, coords2):
 	return math.sqrt( (coords1[0] - coords2[0])**2 + (coords1[1] - coords2[1])**2 )
 
 def calcular_distancia_punto(punto1, punto2, coord):
 	return abs( (punto2[1] - punto1[1])*coord[0] - (punto2[0] - punto1[0])*coord[1] + punto2[0]*punto1[1] - punto2[1]*punto1[0] ) / math.sqrt( (punto2[1] - punto1[1])**2 + (punto2[0] - punto1[0])**2 )
+
+# . Posiciones en arrays .
 
 def get_posicion_ciudad(id_c):
 	global ciudades
@@ -143,6 +193,31 @@ def get_posicion_ciudad(id_c):
 			return i
 	
 	return None
+
+# . Route finder .
+
+def ciudades_accesibles(id_ciudad): # TODO : AQUI SEGURO QUE SE PUEDE OPTIMIZAR PRE-COMPILANDO LOS SETS -> LOOKUP TABLE
+	global rutas, ciudades
+	
+	if id_ciudad == None: return [c.id for c in ciudades] # Si id_ciudad es None -> devolver todas las ciudades
+	
+	ciudades_acc = set() # Ciudades accesibles
+	
+	for r in rutas:
+		temp_set = set() # Set con las ciudades que pasan por la ruta r
+		add_set = False # Añadimos temp_set a ciudades_acc ?
+		
+		for parada in r.puntos:
+			print(parada.id_ciudad)
+			
+			if parada.id_ciudad == None: continue # Si el punto de la ruta no es una parada -> ignorar
+			
+			if parada.id_ciudad == id_ciudad: add_set = True
+			else: temp_set.add(parada.id_ciudad)
+		
+		if add_set: ciudades_acc = ciudades_acc.union(temp_set)
+	
+	return list(ciudades_acc)
 
 # --- IDs managers ---
 
@@ -180,6 +255,23 @@ def generar_nuevo_id_ruta():
 	
 	new_id_ciudad = i
 
+def generar_nuevo_id_linea():
+	global lineas, new_id_linea
+	
+	i = 0
+	while True:
+		salir = True
+		
+		for l in lineas:
+			if l.id == i:
+				salir = False
+				break
+		
+		if salir: break
+		else: i += 1
+	
+	new_id_linea = i
+
 # --- Funciones para guardar ---
 
 def guardar_ciudades():
@@ -189,7 +281,7 @@ def guardar_ciudades():
 		json.dump([c.__dict__ for c in ciudades], f, indent = 4)
 		f.close()
 	
-	print(f"{len(ciudades)} guardadas")
+	print(f"{len(ciudades)} ciudades guardadas")
 
 def guardar_rutas():
     global rutas, rutasF
@@ -206,6 +298,9 @@ def guardar_rutas():
         json.dump(rutas_serializadas, f, indent=4)
     
     print(f"{len(rutas)} rutas guardadas")
+
+def guardar_lineas():
+	return # TODO : FINISH
 
 # --- Funciones para cargar ---
 
@@ -241,10 +336,13 @@ def cargar_rutas():
 	except JSONDecodeError:
 		pass
 
+def cargar_lineas():
+	return # TODO : FINISH
+
 # --- Status manager ---
 
 def change_status(new_s):
-	global status, input_nombre, moviendo_ciudad, pos_ciudad, new_ciudad_coords, ventana_nombre, input_nombre, estado_ruta, ruta_actual, linea_temp
+	global status, input_nombre, moviendo_ciudad, pos_ciudad, new_ciudad_coords, ventana_nombre, input_nombre, estado_ruta, ruta_actual, linea_temp, estado_linea
 	
 	if new_s == status: return # Si queremos cambiar al mismo modo del que estamos -> don't
 	
@@ -264,19 +362,29 @@ def change_status(new_s):
 			print("No se puede cambiar de modo porque se esta creando una nueva ciudad o se esta moviendo una ciudad ya existente")
 			return
 	elif status == 1: # . Ruta -> new_s .
-		if estado_ruta == 0: # No estamos haciendo nada
+		if estado_ruta == 0: # No estamos haciendo nada -> se puede cambiar de modo
 			status = new_s
 			
 			linea_temp = None
 			ruta_actual = Ruta(0, [])
 		else:
 			print("Se esta creando o editando una ruta")
+			return
+	elif status == 2: # . Lineas -> new_s .
+		if estado_linea == 0: # No estamos haciendo nada -> se puede cambiar de modo
+			status = new_s
+		else:
+			print("Se esta creando o editando una ruta")
+			return
 	
 	# . Trayecto -> new_s .
 	
+	if status == 2: # Si el nuevo estatus es Lineas -> abrir la ventana
+		abrir_ventana_lineas()
+	
 	# --- Indicar el cambio de modo ---
 	
-	txts = ["Actualmente : editando ciudades", "Actualmente : editando rutas", "Actualmente : editando trayectos"]
+	txts = ["Actualmente : editando ciudades", "Actualmente : editando rutas", "Actualmente : editando lineas"]
 	canvas.itemconfig(texto_status, text = txts[new_s])
 
 # --- Funciones dibujar ---
@@ -680,6 +788,8 @@ def mmove(event):
 
 # . Borrar .
 
+# TODO : DO
+
 # --- Click managers ---
 
 def click(event):
@@ -708,11 +818,259 @@ def soltar(event):
 	elif status == 1 and estado_ruta == 2:
 		dejar_mover_ruta(event)
 
+# --- Lineas ---
+
+# . Creacion / editado de lineas / trayectos .
+
+def borrarLinea():
+	return # TODO : FINISH
+
+def borrarTrayecto():
+	return # TODO : FINISH
+
+def cambiarTrayecto(mover):
+	return # TODO : FINISH
+
+def paradaSeleccionada(parada):
+	return # TODO : FINISH
+
+def quitarParada(a = None):
+	return # TODO : FINISH
+
+def addParada(parada = None, lleg = "0000", sali = "0005"):
+	global top_lin, linea_actual, pos_trayecto, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, botones_paradas
+	
+	# --- Es un nuevo trayecto o uno viejo ---
+	
+	ciudades_acc = None
+	if len(linea_actual.trayectos[pos_trayecto].puntos) > 0: # Si ya hay varias 
+		ciudades_acc = ciudades_accesibles(linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad)
+		
+		# Bloquear el selector del anterior
+		botones_paradas[pos_trayecto].selector[-1].configure(state = "disabled")
+	else:
+		ciudades_acc = ciudades_accesibles(None)
+	
+	if len(ciudades_acc) < 1:
+		print("No hay suficientes ciudades")
+		cancelar_linea()
+		return
+	
+	# --- Datos para visualizar ---
+	
+	ciud = StringVar()
+	if parada == None: ciud.set(ciudades_acc[0])
+	else: ciud.set(parada)
+	
+	length = len(linea_actual.trayectos[pos_trayecto].puntos)
+	
+	dX = [10, 30, 250, 325]
+	dY = [93 + (length * 30), 90 + (length * 30), 95 + (length * 30), 95 + (length * 30)]
+	
+	posId = length + len(linea_actual.trayectos[pos_trayecto].puntos)
+	
+	print(dY[0])
+	
+	# --- Añadir texto nueva parada ---
+	
+	# . Añadir los botones para la parada actual .
+	
+	botones_paradas[pos_trayecto].selector.append(OptionMenu(top_lin, ciud, *ciudades_acc, command = lambda a = posId : paradaSeleccionada(a, False)))
+	botones_paradas[pos_trayecto].llegadas.append(Text(top_lin, heigh = 1, width = 4))
+	botones_paradas[pos_trayecto].salidas.append(Text(top_lin, heigh = 1, width = 4))
+	
+	# . Actualizar la posicion del boton para quitar la ultima parada .
+	
+	if botones_paradas[pos_trayecto].quitar == None: botones_paradas[pos_trayecto].quitar = Button(top_lin, text = "X", command = quitarParada) # Si no hay boton de quitar -> Lo añadimos
+	
+	# . Mover los botones viejos
+	
+	botones_paradas[pos_trayecto].quitar.place(x = dX[0], y = dY[0])
+	
+	botones_paradas[pos_trayecto].selector[-1].place(x = dX[1], y = dY[1])
+	botones_paradas[pos_trayecto].llegadas[-1].place(x = dX[2], y = dY[2])
+	botones_paradas[pos_trayecto].salidas[-1].place(x = dX[3], y = dY[3])
+	
+	# . Poner la hora de la parada .
+	
+	if len(linea_actual.trayectos[pos_trayecto].puntos) > 0 and lleg == "0000" and sali == "0005":
+		botones_paradas[pos_trayecto].llegadas[-1].insert(END, beautifyTiempo(str(int(botones_paradas[pos_trayecto].llegadas[-2].get("1.0",'end-1c')) + 100)))
+		botones_paradas[pos_trayecto].salidas[-1].insert(END, beautifyTiempo(str(int(botones_paradas[pos_trayecto].salidas[-2].get("1.0",'end-1c')) + 100)))
+	else:
+		botones_paradas[pos_trayecto].llegadas[-1].insert(END, beautifyTiempo(lleg))
+		botones_paradas[pos_trayecto].salidas[-1].insert(END, beautifyTiempo(sali))
+	
+	# --- Mover botones ---
+	
+	# . Borrar viejos botones .
+	
+	if (anadirParada != None):
+		
+		# Nueva parada
+		
+		anadirParada.destroy()
+		
+		# Cambiar de trayecto
+		
+		trayectoAnt.destroy()
+		trayectoSig.destroy()
+		trayectoDel.destroy()
+		
+		# Borrar linea
+		
+		lineaDel.destroy()
+	
+	# . Añadir botones en la buena posicion .
+	
+	anadirParada = Button(top_lin, text = "Añadir parada", command = addParada)
+	anadirParada.place(x = 10, y = 125 + (length * 30))
+	
+	trayectoAnt = Button(top_lin, text = "Anterior", command = lambda : cambiarTrayecto(-1))
+	trayectoAnt.place(x = 110, y = 125 + (length * 30))
+	
+	trayectoSig = Button(top_lin, text = "Siguiente", command = lambda : cambiarTrayecto(1))
+	trayectoSig.place(x = 175, y = 125 + (length * 30))
+	
+	trayectoDel = Button(top_lin, text = "Borrar horario", command = borrarTrayecto)
+	trayectoDel.place(x = 240, y = 125 + (length * 30))
+	
+	lineaDel = Button(top_lin, text = "Borrar linea", command = borrarLinea)
+	lineaDel.place(x = 330, y = 125 + (length * 30))
+	
+	# --- Añadir una nueva parada en el trayecto actual ---
+	
+	linea_actual.trayectos[pos_trayecto].puntos.append(Punto([0, 0], True, int(ciud.get())))
+	linea_actual.trayectos[pos_trayecto].llegadas.append(botones_paradas[pos_trayecto].llegadas[-1].get("1.0",'end-1c'))
+	linea_actual.trayectos[pos_trayecto].salidas.append(botones_paradas[pos_trayecto].salidas[-1].get("1.0",'end-1c'))
+	
+	#trayectosActuales[posActual].append([]) # Crear una nueva parada
+	
+	#trayectosActuales[posActual][-1].append(Button(top, text = "X"))
+	
+	return
+
+# . Ventana management .
+
+def cambiar_color_actual():
+	global colorLinea
+	
+	colorLinea.configure(bg = colorchooser.askcolor(title ="Elige un color")[1])
+
+def nueva_linea():
+	global top_lin, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas
+	
+	# --- Borrar pantalla anterior ---
+	
+	if (selecLn != None): selecLn.destroy()
+	
+	# --- Dibujar nueva pantalla ---
+	
+	# . Nombre de la linea .
+	
+	nombreLin = Text(top_lin, height = 1, width = 15) 
+	nombreLin.place(x = 125, y = 50)
+	nombreLin.insert(END, "Linea " + str(linea_actual.id))
+	
+	# . Boton guardar .
+	
+	Button(top_lin, text = "Guardar", command = guardar_lineas).place(x = 175, y = 575)
+	
+	# . Color linea picker .
+	
+	colorLinea = Button(top_lin, bg = "#ff0000", command = cambiar_color_actual)
+	colorLinea.place(x = 10, y = 10)
+	
+	# . Texto trayecto actual .
+	
+	trayecto_actual.set("Horario " + str(pos_trayecto + 1) + '/' + str(len(linea_actual.trayectos)))
+	
+	# --- Crear nueva linea vacia ---
+	
+	botones_paradas = [Parada_visual()]
+	linea_actual = Linea(0, [255, 0, 0], "Nombre", [Trayecto([], [], [])])
+	
+	# --- Añadir la primera parada ---
+	
+	addParada()
+
+def cancelar_linea(event = None):
+	global top_lin
+	
+	# --- Destruir ventana ---
+	
+	top_lin.destroy()
+	
+	# --- Cambiar el estatus a modificar ciudades ---
+	
+	change_status(0)
+	
+	return # TODO : FINISH
+
+def linea_elegida():
+	return # TODO : FINISH
+
+def abrir_ventana_lineas():
+	global lineas, estado_linea, top_lin, lin, selecLn, pos_trayecto, trayecto_actual, linea_actual, nombreLin, new_id_linea
+	
+	# --- Reset estado linea ---
+	
+	estado_linea = 0
+	
+	# --- Crear ventana ---
+	
+	top_lin = Toplevel()
+	
+	top_lin.geometry("400x600")
+	top_lin.title("Crear ruta")
+	top_lin.resizable(False, False)
+	
+	# . Nueva linea .
+	
+	Button(top_lin, text = "Nueva línea", command = nueva_linea).place(x = 150, y = 10)
+	
+	# . Elegir linea existente .
+	
+	if (len(lineas) > 0):		
+		lin = StringVar()
+		lin.set("Selecciona una línea")
+		
+		tras = [t.nombre for t in lineas]
+		selecLn = OptionMenu(top_lin, lin, *tras, command = linea_elegida)
+		selecLn.place(x = 100, y = 50)
+	
+	# . Texto trayecto actual .
+	
+	trayecto_actual = StringVar()
+	trayecto_actual.set("")
+	
+	Label(top_lin, textvariable = trayecto_actual).place(x = 150, y = 75)
+	
+	# --- Resetear variables lineas ---
+	
+	# . Nombre de la linea .
+	
+	nombreLin = None
+	
+	# . Linea y trayecto actual .
+	
+	pos_trayecto = 0
+	linea_actual = Linea(new_id_linea, [255, 0, 0], "Nueva Linea", [Trayecto([], [], [])])
+	
+	# --- Binds ---
+	
+	top_lin.bind("<Return>", guardar)
+	top_lin.bind("<Escape>", cancelar_linea)
+	
+	top_lin.protocol("WM_DELETE_WINDOW",  cancelar_linea)
+	
+	top_lin.focus_force()
+
 # --- Tecla managers ---
 
 def guardar(event = None):
 	guardar_ciudades()
 	guardar_rutas()
+	guardar_lineas()
 
 # --- Binds ---
 
@@ -731,15 +1089,16 @@ canvas.bind("<Motion>", mmove)
 
 root.bind("<C>", lambda event, a = 0 : change_status(a))
 root.bind("<R>", lambda event, a = 1 : change_status(a))
-root.bind("<T>", lambda event, a = 2 : change_status(a))
+root.bind("<L>", lambda event, a = 2 : change_status(a))
 
 root.bind("<c>", lambda event, a = 0 : change_status(a))
 root.bind("<r>", lambda event, a = 1 : change_status(a))
-root.bind("<t>", lambda event, a = 2 : change_status(a))
+root.bind("<l>", lambda event, a = 2 : change_status(a))
 
 # . Teclas .
 
 root.bind("<s>", guardar)
+root.bind("<S>", guardar)
 
 # --- Iniciar programa ---
 
@@ -749,6 +1108,7 @@ change_status(0) # Init status -> Ciudades
 
 generar_nuevo_id_ciudad()
 generar_nuevo_id_ruta()
+generar_nuevo_id_linea()
 
 # . Init ruta actual .
 

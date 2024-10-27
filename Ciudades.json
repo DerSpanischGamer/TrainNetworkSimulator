@@ -1,302 +1,394 @@
 [
     {
         "id": 0,
-        "nombre": "GENF",
-        "x": 232,
-        "y": 827
+        "nombre": "GE",
+        "coords": [
+            233,
+            828
+        ]
     },
     {
         "id": 1,
         "nombre": "GE-AP",
-        "x": 221,
-        "y": 816
+        "coords": [
+            221,
+            815
+        ]
     },
     {
         "id": 2,
-        "nombre": "LAUSANNE",
-        "x": 405,
-        "y": 675
+        "nombre": "LS",
+        "coords": [
+            403,
+            675
+        ]
     },
     {
         "id": 3,
-        "nombre": "BERN",
-        "x": 688,
-        "y": 459
+        "nombre": "Morges",
+        "coords": [
+            335,
+            695
+        ]
     },
     {
         "id": 4,
-        "nombre": "FRIBOURG",
-        "x": 589,
-        "y": 531
+        "nombre": "BE",
+        "coords": [
+            689,
+            459
+        ]
     },
     {
         "id": 5,
-        "nombre": "OLTEN",
-        "x": 849,
-        "y": 254
-    },
-    {
-        "id": 7,
-        "nombre": "ZURICH HB",
-        "x": 1068,
-        "y": 238
+        "nombre": "ZH",
+        "coords": [
+            1066,
+            240
+        ]
     },
     {
         "id": 6,
-        "nombre": "ST GALLEN",
-        "x": 1352,
-        "y": 210
+        "nombre": "Delemont",
+        "coords": [
+            658,
+            249
+        ]
+    },
+    {
+        "id": 7,
+        "nombre": "SG",
+        "coords": [
+            1354,
+            211
+        ]
     },
     {
         "id": 8,
-        "nombre": "WIL SG",
-        "x": 1239,
-        "y": 194
+        "nombre": "SH",
+        "coords": [
+            1098,
+            76
+        ]
     },
     {
         "id": 9,
-        "nombre": "GOSSAU",
-        "x": 1313,
-        "y": 219
+        "nombre": "Interlaken",
+        "coords": [
+            837,
+            590
+        ]
     },
     {
         "id": 10,
-        "nombre": "UZWIL",
-        "x": 1270,
-        "y": 206
+        "nombre": "Spiez",
+        "coords": [
+            769,
+            591
+        ]
     },
     {
         "id": 11,
-        "nombre": "FLAWIL",
-        "x": 1292,
-        "y": 216
+        "nombre": "Olten",
+        "coords": [
+            850,
+            253
+        ]
     },
     {
         "id": 12,
-        "nombre": "WINTERTHUR",
-        "x": 1126,
-        "y": 181
+        "nombre": "NE",
+        "coords": [
+            513,
+            433
+        ]
     },
     {
         "id": 13,
-        "nombre": "ZURICH OERLIKON",
-        "x": 1065,
-        "y": 227
+        "nombre": "Yverdon",
+        "coords": [
+            412,
+            542
+        ]
     },
     {
         "id": 14,
-        "nombre": "ZURICH AP",
-        "x": 1072,
-        "y": 207
+        "nombre": "FR",
+        "coords": [
+            588,
+            531
+        ]
     },
     {
         "id": 15,
-        "nombre": "ZUG",
-        "x": 1060,
-        "y": 342
+        "nombre": "BS",
+        "coords": [
+            739,
+            156
+        ]
     },
     {
         "id": 16,
-        "nombre": "BELLINZONA",
-        "x": 1249,
-        "y": 833
+        "nombre": "IL West",
+        "coords": [
+            828,
+            599
+        ]
     },
     {
         "id": 17,
-        "nombre": "ALTDORF",
-        "x": 1099,
-        "y": 481
+        "nombre": "Liestal",
+        "coords": [
+            789,
+            189
+        ]
     },
     {
         "id": 18,
-        "nombre": "ARTH-GOLDAU",
-        "x": 1073,
-        "y": 405
+        "nombre": "Winterthur",
+        "coords": [
+            1128,
+            182
+        ]
     },
     {
         "id": 19,
-        "nombre": "LUGANO",
-        "x": 1221,
-        "y": 928
+        "nombre": "ZH-AP",
+        "coords": [
+            1074,
+            203
+        ]
     },
     {
         "id": 20,
-        "nombre": "BASEL",
-        "x": 739,
-        "y": 155
+        "nombre": "ZH-Oerlikon",
+        "coords": [
+            1067,
+            220
+        ]
     },
     {
         "id": 21,
-        "nombre": "SARGANS",
-        "x": 1384,
-        "y": 403
+        "nombre": "Wil",
+        "coords": [
+            1238,
+            194
+        ]
     },
     {
         "id": 22,
-        "nombre": "LANDQUART",
-        "x": 1422,
-        "y": 439
+        "nombre": "Uzwil",
+        "coords": [
+            1271,
+            203
+        ]
     },
     {
         "id": 23,
-        "nombre": "CHUR",
-        "x": 1414,
-        "y": 498
+        "nombre": "Flawil",
+        "coords": [
+            1291,
+            217
+        ]
     },
     {
         "id": 24,
-        "nombre": "SINGEN",
-        "x": 1166,
-        "y": 45
+        "nombre": "Gossau",
+        "coords": [
+            1314,
+            215
+        ]
     },
     {
         "id": 25,
-        "nombre": "SCHAFFHAUSEN",
-        "x": 1097,
-        "y": 74
+        "nombre": "Lugano",
+        "coords": [
+            1223,
+            936
+        ]
     },
     {
         "id": 26,
-        "nombre": "MORGES",
-        "x": 350,
-        "y": 682
+        "nombre": "Arth-Goldau",
+        "coords": [
+            1073,
+            406
+        ]
     },
     {
         "id": 27,
-        "nombre": "YVERDON",
-        "x": 406,
-        "y": 536
+        "nombre": "Altdorf",
+        "coords": [
+            1099,
+            479
+        ]
     },
     {
         "id": 28,
-        "nombre": "NEUCHATEL",
-        "x": 514,
-        "y": 433
+        "nombre": "Zug",
+        "coords": [
+            1059,
+            343
+        ]
     },
     {
         "id": 29,
-        "nombre": "BIEL",
-        "x": 622,
-        "y": 364
+        "nombre": "Bellinzona",
+        "coords": [
+            1249,
+            834
+        ]
     },
     {
         "id": 30,
-        "nombre": "SOLOTHURN",
-        "x": 724,
-        "y": 331
+        "nombre": "Chur",
+        "coords": [
+            1416,
+            497
+        ]
     },
     {
         "id": 31,
-        "nombre": "AARAU",
-        "x": 898,
-        "y": 234
+        "nombre": "Landquart",
+        "coords": [
+            1423,
+            435
+        ]
     },
     {
         "id": 32,
-        "nombre": "RORSCHACH",
-        "x": 1396,
-        "y": 181
+        "nombre": "Sargans",
+        "coords": [
+            1406,
+            418
+        ]
     },
     {
         "id": 33,
-        "nombre": "THUN",
-        "x": 755,
-        "y": 556
+        "nombre": "Singen",
+        "coords": [
+            1166,
+            46
+        ]
     },
     {
         "id": 34,
-        "nombre": "SPIEZ",
-        "x": 764,
-        "y": 588
+        "nombre": "Biel",
+        "coords": [
+            617,
+            362
+        ]
     },
     {
         "id": 35,
-        "nombre": "VISP",
-        "x": 843,
-        "y": 789
+        "nombre": "Solothurn",
+        "coords": [
+            724,
+            330
+        ]
     },
     {
         "id": 36,
-        "nombre": "BRIG",
-        "x": 881,
-        "y": 776
+        "nombre": "Rorscharch",
+        "coords": [
+            1402,
+            182
+        ]
     },
     {
         "id": 37,
-        "nombre": "DOMODOSSOLA",
-        "x": 992,
-        "y": 878
+        "nombre": "Aarau",
+        "coords": [
+            899,
+            234
+        ]
     },
     {
         "id": 38,
-        "nombre": "ROMANSHORN",
-        "x": 1353,
-        "y": 139
+        "nombre": "Visp",
+        "coords": [
+            845,
+            789
+        ]
     },
     {
         "id": 39,
-        "nombre": "FRAUENFELD",
-        "x": 1189,
-        "y": 148
+        "nombre": "Brig",
+        "coords": [
+            881,
+            775
+        ]
     },
     {
         "id": 40,
-        "nombre": "WEINFELDEN",
-        "x": 1259,
-        "y": 140
+        "nombre": "Domodossola",
+        "coords": [
+            991,
+            878
+        ]
     },
     {
         "id": 41,
-        "nombre": "AMRISWIL",
-        "x": 1338,
-        "y": 148
+        "nombre": "Thun",
+        "coords": [
+            754,
+            556
+        ]
     },
     {
         "id": 42,
-        "nombre": "LUZERN",
-        "x": 992,
-        "y": 409
+        "nombre": "Romanshorn",
+        "coords": [
+            1353,
+            138
+        ]
     },
     {
         "id": 43,
-        "nombre": "LAUFEN",
-        "x": 709,
-        "y": 220
+        "nombre": "Amriswil",
+        "coords": [
+            1288,
+            153
+        ]
     },
     {
         "id": 44,
-        "nombre": "DELEMONT",
-        "x": 657,
-        "y": 249
+        "nombre": "Frauenfeld",
+        "coords": [
+            1191,
+            147
+        ]
     },
     {
         "id": 45,
-        "nombre": "MOUTIER",
-        "x": 668,
-        "y": 290
+        "nombre": "Weinfelden",
+        "coords": [
+            1261,
+            140
+        ]
     },
     {
         "id": 46,
-        "nombre": "GRENCHEN",
-        "x": 670,
-        "y": 336
+        "nombre": "Moutier",
+        "coords": [
+            669,
+            292
+        ]
     },
     {
         "id": 47,
-        "nombre": "LIESTAL",
-        "x": 788,
-        "y": 188
+        "nombre": "Grenchen",
+        "coords": [
+            671,
+            337
+        ]
     },
     {
         "id": 48,
-        "nombre": "INTERLAKEN WEST",
-        "x": 832,
-        "y": 591
-    },
-    {
-        "id": 49,
-        "nombre": "INTERLAKEN OST",
-        "x": 838,
-        "y": 585
+        "nombre": "Laufen",
+        "coords": [
+            711,
+            221
+        ]
     }
 ]

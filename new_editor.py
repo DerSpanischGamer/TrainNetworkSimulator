@@ -1,9 +1,20 @@
-﻿import math
+﻿import gc
+import math
 import json
 from tkinter import *
 from copy import deepcopy
 from PIL import Image, ImageTk
 from tkinter import colorchooser
+
+# ========= TODO =========
+
+# Borrar ciudades
+
+
+# Guardar el nombre de la linea de tren antes de guardarla (maybe a check to see if the line we are editing already exists ????)
+# Borrar rutas de trenes : (backspace = quitar punto (si se esta moviendo punto) ; escape / delete = borrar)
+# We are missing the whole route thingy for the lineas creadas -> tenemos las paradas que deberia hacer y las horas a las que deberia parar por cada parada, pero no sabemos que ruta sigue...
+# Boton de Nueva linea sigue accesible -> se deberia eliminar en linea_elegida
 
 # ========= VARIABLES =========
 
@@ -59,7 +70,7 @@ posicion_en_ruta = [] # Same, pero aqui se guarda la posicion de la ciudad que s
 
 estado_linea = 0 # 0 = nada ; 1 = creando linea ; 2 = modificando linea
 
-linea_actual = None # Linea actual que se esta editando
+linea_actual = None # Clase Linea de la linea actual que se esta editando
 
 top_lin = None # Ventana de linea
 
@@ -95,7 +106,7 @@ lineasF = "Lineas.json"
 
 ciudades = [] # Todas la ciudades en el mapa
 rutas = [] # Todas las rutas en el mapa
-lineas = [] # Todos los trayectos de trenes
+lineas = [] # Todos las lineas de trenes
 
 # --- Editor ---
 
@@ -128,8 +139,8 @@ class Trayecto:
 	def __init__(self, puntos, salidas, llegadas):
 		self.puntos = puntos
 		
-		self.salidas = salidas
 		self.llegadas = llegadas
+		self.salidas = salidas
 
 class Linea:
 	def __init__(self, id, nombre, color, trayectos):
@@ -149,6 +160,11 @@ class Parada_visual:
 		self.salidas = salidas
 		
 		self.quitar = quitar
+	
+	def clear(self):
+		self.selector.clear()
+		self.llegadas.clear()
+		self.salidas.clear()
 
 # ========= FUNCIONES =========
 
@@ -173,14 +189,93 @@ canvas.pack()
 # --- Funciones de base ---
 
 def beautifyTiempo(txt):
+	if isinstance(txt, int): txt = str(txt)
+	
 	return "0" * (4 - len(txt)) + txt # Devuelve la hora con ceros delante
 
-def insertar_linea_actual(): # TODO : AÑADIR CHECKS PARA VER QUE LA LINEA SEA VALIDA
-	global linea_actual, lineas
+def checkTiempo(txt):
+	print(txt)
+	if len(txt) != 4 or not txt.isdigit(): # Si no hay 4 chars o todos los chars no son numeros -> No esta bien
+		return False
+	
+	return True
+
+def checkHora(hora):
+	h = hora // 100
+	m = hora % 100
+	
+	return (0 <= h < 24) and (0 <= m < 60)
+
+def insertar_linea_actual():
+	global linea_actual, botones_paradas, lineas
+	
+	# --- Actualizar horas ---
+	
+	# . Llegadas .
+	
+	for i in range(len(botones_paradas)):
+		for j in range(len(botones_paradas[i].llegadas)):
+			
+			linea_actual.trayectos[i].llegadas[j] = botones_paradas[i].llegadas[j].get("1.0", 'end-1c')
+			
+			if checkTiempo(linea_actual.trayectos[i].llegadas[j]) == False:
+				print(f"La hora de llegada introducida : {linea_actual.trayectos[i].llegadas[j]} no es valida")
+				return False
+	
+	# . Salidas .
+	
+	for i in range(len(botones_paradas)):
+		for j in range(len(botones_paradas[i].salidas)):
+			
+			linea_actual.trayectos[i].salidas[j] = botones_paradas[i].salidas[j].get("1.0", 'end-1c')
+			
+			if checkTiempo(linea_actual.trayectos[i].salidas[j]) == False:
+				print(f"La hora de salida introducida : {linea_actual.trayectos[i].salidas[j]} no es valida")
+				return False
 	
 	# --- Checks de validez ---
 	
 	# . Horarios .
+	
+	# Mirar que todos los horarios tengan el buen formato 0000 -> 2400
+	
+	trayectos_ok = True
+	
+	i = 0
+	for tray in linea_actual.trayectos:
+		ult_salida = -1
+		
+		j = 0
+		for llegada, salida in zip(tray.llegadas, tray.salidas):
+			llegada = int(llegada)
+			salida = int(salida)
+			
+			# Verificar que las dos horas son validas
+			if checkHora(llegada) * checkHora(salida) == False:
+				print(f"El formato de las horas de llegada {beautifyTiempo(llegada)} o salida {beautifyTiempo(salida)} no es correcto. Tray {i} , parada {j}")
+				trayectos_ok = False
+				break
+			
+			# Verificar que la hora de llegada es despues de la ultima hora de salida
+			if ult_salida > llegada:
+				print(f"La hora de llegada es inferior a la ultima salida : {beautifyTiempo(llegada)} < {beautifyTiempo(ult_salida)}. Tray {i} , parada {j}")
+				trayectos_ok = False
+				break
+			
+			# Verificar que la hora de salida es despues de la hora de llegada
+			if llegada > salida:
+				print(f"La hora de llegada es superior a la de salida : {beautifyTiempo(llegada)} > {beautifyTiempo(salida)}. Tray {i} , parada {j}")
+				trayectos_ok = False
+				break
+			
+			j += 1
+			ult_salida = salida # Actualizar la ultima hora de salida
+		
+		i += 1
+		if trayectos_ok == False: break
+	
+	if trayectos_ok == False:
+		return False
 	
 	# . Numero de paradas .
 	
@@ -192,6 +287,13 @@ def insertar_linea_actual(): # TODO : AÑADIR CHECKS PARA VER QUE LA LINEA SEA V
 			return
 	
 	lineas.append(linea_actual)
+	
+	return True # No ha habido problemas
+
+def RGB2hex(color):
+    rgb_array = [max(0, min(255, int(x))) for x in color]
+	
+    return '#{:02x}{:02x}{:02x}'.format(rgb_array[0], rgb_array[1], rgb_array[2])
 
 # . Calcular distancias .
 
@@ -252,6 +354,14 @@ def get_id_ciudad_con_nombre(nombre_ciudad):
 	
 	for c in ciudades:
 		if nombre_ciudad == c.nombre: return c.id
+	
+	return None
+
+def get_posicion_linea(nombre_linea):
+	global lineas
+	
+	for i in range(len(nombre_linea)):
+		if lineas[i].nombre == nombre_linea: return i
 	
 	return None
 
@@ -336,10 +446,12 @@ def guardar_rutas():
 	print(f"{len(rutas)} rutas guardadas")
 
 def guardar_lineas():
-	global lineasF, lineas, linea_actual
+	global lineasF, lineas, linea_actual, estado_linea # TODO : CON ESTADO LINEA HACER LA DIFERENCIA ENTRE MODIFICAR Y CREAR NUEVA LINEA
 	
 	if linea_actual != None:
-		insertar_linea_actual()
+		if insertar_linea_actual() == False:
+			print("Error : no se ha podido guardar la linea de tren")
+			return
 	
 	with open(lineasF, "w+") as f:
 		json.dump([l.__dict__ for l in lineas], f, indent = 4, default=lambda o: o.__dict__)
@@ -381,7 +493,7 @@ def cargar_rutas():
 	except JSONDecodeError:
 		pass
 
-def cargar_lineas():
+def cargar_lineas(): # TODO : FINISH
 	global lineas, lineasF, linea_actual
 	
 	with open(lineasF, "r") as f:
@@ -390,6 +502,7 @@ def cargar_lineas():
 		lineas = []
 		for linea_data in data:
 			trayectos = []
+			
 			for trayecto_data in linea_data['trayectos']:
 				puntos = [Punto(**punto_data) for punto_data in trayecto_data['puntos']]
 				trayecto = Trayecto(puntos=puntos, salidas=trayecto_data['salidas'], llegadas=trayecto_data['llegadas'])
@@ -881,9 +994,6 @@ def soltar(event):
 
 # . Creacion / editado de lineas / trayectos .
 
-def borrarLinea():
-	return # TODO : FINISH
-
 def borrarTrayecto():
 	global linea_actual, pos_trayecto, botones_paradas
 	
@@ -917,8 +1027,10 @@ def borrarTrayecto():
 	
 	return
 
-def cambiarTrayecto(dir, copiar = True):
+def cambiarTrayecto(dir, copiar = True, auto = False):
 	global top_lin, linea_actual, pos_trayecto, botones_paradas, trayecto_actual, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel
+	
+	if dir == 0: return
 	
 	# --- Esconder los elementos del trayecto actual ---
 	
@@ -932,6 +1044,12 @@ def cambiarTrayecto(dir, copiar = True):
 	# --- Actualizar pos_trayecto ---
 	
 	pos_trayecto += dir
+	
+	# --- Auto management ---
+	
+	if auto:
+		botones_paradas.append(Parada_visual([], [], [], None)) # Añadir la lista de botones
+		return
 	
 	# --- Crear o mover ---
 	
@@ -980,7 +1098,7 @@ def cambiarTrayecto(dir, copiar = True):
 		trayectoDel = Button(top_lin, text = "Borrar horario", command = borrarTrayecto)
 		trayectoDel.place(x = 240, y = 95 + (length * 30))
 		
-		lineaDel = Button(top_lin, text = "Borrar linea", command = borrarLinea)
+		lineaDel = Button(top_lin, text = "Borrar linea", command = cancelar_linea)
 		lineaDel.place(x = 330, y = 95 + (length * 30))
 		
 	else: # Hay que crear un nuevo trayecto
@@ -1068,7 +1186,8 @@ def addParada(parada = None, lleg = "0000", sali = "0005"):
 	# --- Es un nuevo trayecto o uno viejo ---
 	
 	ciudades_acc = None
-	if len(linea_actual.trayectos[pos_trayecto].puntos) > 0: # Si ya hay varias
+	
+	if len(botones_paradas[pos_trayecto].selector) > 0: # Si ya hay varias
 		ciudades_acc = ciudades_accesibles( get_nombre_ciudad_con_id(linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad) )
 		
 		# . Bloquear el selector del anterior .
@@ -1088,12 +1207,12 @@ def addParada(parada = None, lleg = "0000", sali = "0005"):
 	if parada == None: ciud.set(ciudades_acc[0])
 	else: ciud.set(parada)
 	
-	length = len(linea_actual.trayectos[pos_trayecto].puntos)
+	length = len(botones_paradas[pos_trayecto].selector)
 	
 	dX = [10, 30, 250, 325]
 	dY = [93 + (length * 30), 90 + (length * 30), 95 + (length * 30), 95 + (length * 30)]
 	
-	posId = length + len(linea_actual.trayectos[pos_trayecto].puntos)
+	posId = 2 * length
 	
 	# --- Añadir texto nueva parada ---
 	
@@ -1117,7 +1236,9 @@ def addParada(parada = None, lleg = "0000", sali = "0005"):
 	
 	# . Poner la hora de la parada .
 	
-	if len(linea_actual.trayectos[pos_trayecto].puntos) > 0 and lleg == "0000" and sali == "0005":
+	# TODO : HAVING AN INVALID HOUR MAKES IT SO THAT THE int() FUNCTION DOESNT WORK HERE
+	
+	if len(botones_paradas[pos_trayecto].llegadas) > 1 and len(botones_paradas[pos_trayecto].salidas) > 1 and lleg == "0000" and sali == "0005":
 		botones_paradas[pos_trayecto].llegadas[-1].insert(END, beautifyTiempo(str(int(botones_paradas[pos_trayecto].llegadas[-2].get("1.0",'end-1c')) + 100)))
 		botones_paradas[pos_trayecto].salidas[-1].insert(END, beautifyTiempo(str(int(botones_paradas[pos_trayecto].salidas[-2].get("1.0",'end-1c')) + 100)))
 	else:
@@ -1158,14 +1279,15 @@ def addParada(parada = None, lleg = "0000", sali = "0005"):
 	trayectoDel = Button(top_lin, text = "Borrar horario", command = borrarTrayecto)
 	trayectoDel.place(x = 240, y = 125 + (length * 30))
 	
-	lineaDel = Button(top_lin, text = "Borrar linea", command = borrarLinea)
+	lineaDel = Button(top_lin, text = "Borrar linea", command = cancelar_linea)
 	lineaDel.place(x = 330, y = 125 + (length * 30))
 	
 	# --- Añadir una nueva parada en el trayecto actual ---
 	
-	linea_actual.trayectos[pos_trayecto].puntos.append(Punto([0, 0], True, get_id_ciudad_con_nombre(ciud.get())))
-	linea_actual.trayectos[pos_trayecto].llegadas.append(botones_paradas[pos_trayecto].llegadas[-1].get("1.0",'end-1c'))
-	linea_actual.trayectos[pos_trayecto].salidas.append(botones_paradas[pos_trayecto].salidas[-1].get("1.0",'end-1c'))
+	if lleg == "0000" and sali == "0005":
+		linea_actual.trayectos[pos_trayecto].puntos.append(Punto([0, 0], True, get_id_ciudad_con_nombre(ciud.get())))
+		linea_actual.trayectos[pos_trayecto].llegadas.append(botones_paradas[pos_trayecto].llegadas[-1].get("1.0",'end-1c'))
+		linea_actual.trayectos[pos_trayecto].salidas.append(botones_paradas[pos_trayecto].salidas[-1].get("1.0",'end-1c'))
 
 # . Ventana management .
 
@@ -1174,7 +1296,7 @@ def cambiar_color_actual():
 	
 	colorLinea.configure(bg = colorchooser.askcolor(title ="Elige un color")[1])
 
-def nueva_linea():
+def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
 	global top_lin, estado_linea, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas
 	
 	# --- Actualizar el estado ---
@@ -1191,7 +1313,9 @@ def nueva_linea():
 	
 	nombreLin = Text(top_lin, height = 1, width = 15) 
 	nombreLin.place(x = 125, y = 50)
-	nombreLin.insert(END, "Linea " + str(linea_actual.id))
+	
+	if nombre_linea == None: nombreLin.insert(END, "Linea " + str(linea_actual.id))
+	else:                    nombreLin.insert(END, nombre_linea)
 	
 	# . Boton guardar .
 	
@@ -1199,40 +1323,28 @@ def nueva_linea():
 	
 	# . Color linea picker .
 	
-	colorLinea = Button(top_lin, bg = "#ff0000", command = cambiar_color_actual)
+	colorLinea = Button(top_lin, bg = RGB2hex(color), command = cambiar_color_actual)
 	colorLinea.place(x = 10, y = 10)
 	
 	# . Texto trayecto actual .
 	
 	trayecto_actual.set("Horario " + str(pos_trayecto + 1) + '/' + str(len(linea_actual.trayectos)))
 	
+	# ^^^ Si estamos modificando una parada y no  ^^^
+	
+	if nombre_linea is not None: return # Si la linea tiene nombre => no hay que crear desde 0
+	
 	# --- Crear nueva linea vacia ---
 	
 	botones_paradas = [Parada_visual()]
-	linea_actual = Linea(0, [255, 0, 0], "Nombre", [Trayecto([], [], [])])
+	linea_actual = Linea(0, "Nombre", [255, 0, 0], [Trayecto([], [], [])])
 	
 	# --- Añadir la primera parada ---
 	
 	addParada()
 
-def cerrar_ventana(event = None, new_s = 0):
-	global top_lin
-	
-	# --- Destruir ventana ---
-	
-	top_lin.destroy()
-	top_lin = None
-	
-	# --- Cambiar el estatus a modificar ciudades ---
-	
-	change_status(new_s)
-
-def cancelar_linea(event = None):
-	global estado_linea, linea_actual, pos_trayecto, botones_paradas
-	
-	# --- Borrar datos anteriores ---
-	
-	if estado_linea == 0: return # Sanity check
+def resetear_variables():
+	global linea_actual, pos_trayecto, botones_paradas
 	
 	# .  Nuevo estado linea .
 	
@@ -1245,15 +1357,50 @@ def cancelar_linea(event = None):
 	
 	# . Borrar botones .
 	
-	for botones in botones_paradas:
-		for i in range(len(botones.selector)):
-			botones.selector[i].destroy()
-			botones.llegadas[i].destroy()
-			botones.salidas[i].destroy()
+	if botones_paradas is not None:	
+		for botones in botones_paradas:
+			for i in range(len(botones.selector)):
+				botones.selector[i].destroy()
+				botones.llegadas[i].destroy()
+				botones.salidas[i].destroy()
+			
+			botones.quitar.destroy()
 		
-		botones.quitar.destroy()
+		for i in range(len(botones_paradas)):
+			botones_paradas[ len(botones_paradas) - 1 - i ].clear()
+		
+		botones_paradas = None
+	
+	gc.collect()
 
-	botones_paradas = [Parada_visual([], [], [], None)]
+def cerrar_ventana(event = None, new_s = 0):
+	global top_lin, estado_linea, botones_paradas
+	
+	# --- Resete variables ---
+	
+	if botones_paradas != None: resetear_variables()
+	
+	# --- Destruir ventana ---
+	
+	top_lin.destroy()
+	del top_lin
+	
+	# --- Cambiar el estatus a modificar ciudades ---
+	
+	estado_linea = 0
+	
+	change_status(new_s)
+
+def cancelar_linea(event = None):
+	global estado_linea
+	
+	# --- Resete variables ---
+	
+	resetear_variables()
+	
+	# --- Borrar datos anteriores ---
+	
+	if estado_linea == 0: return # Sanity check
 	
 	# --- Cerrar la ventana ---
 	
@@ -1263,14 +1410,41 @@ def cancelar_linea(event = None):
 	
 	change_status(2)
 
-def linea_elegida():
-	global estado_linea
+def linea_elegida(nombre_linea): # TODO : FINISH
+	global lineas, linea_actual, estado_linea, botones_paradas, pos_trayecto
 	
 	# --- Actualizar el estado ---
 	
+	pos_linea = get_posicion_linea(nombre_linea)
+	
+	# --- Crear la pantalla con nueva parada ---
+	
+	# . Crear pantalla .
+	
+	nueva_linea(lineas[pos_linea].nombre, lineas[pos_linea].color)
+	
+	# . Traer la linea a linea_actual .
+	
+	botones_paradas = [Parada_visual()]
+	linea_actual = deepcopy(lineas[pos_linea])
+	
+	# . Resetear el estado_linea .
+	
 	estado_linea = 2
 	
-	return # TODO : FINISH
+	# --- Añadir los trayectos ---
+	
+	pos_trayecto = 0
+	for trayecto in linea_actual.trayectos: # For each trayecto
+		for i in range(len(trayecto.puntos)):
+			addParada(parada = get_nombre_ciudad_con_id(trayecto.puntos[i].id_ciudad), lleg = trayecto.llegadas[i], sali = trayecto.salidas[i])
+		
+		if pos_trayecto < len(linea_actual.trayectos) - 1:
+			cambiarTrayecto(1, copiar = False, auto = True)
+	
+	cambiarTrayecto(-len(linea_actual.trayectos) + 1)
+	
+	return
 
 def abrir_ventana_lineas():
 	global lineas, estado_linea, top_lin, lin, selecLn, pos_trayecto, trayecto_actual, linea_actual, nombreLin, new_id_linea
@@ -1317,12 +1491,12 @@ def abrir_ventana_lineas():
 	# . Linea y trayecto actual .
 	
 	pos_trayecto = 0
-	linea_actual = Linea(new_id_linea, [255, 0, 0], "Nueva Linea", [Trayecto([], [], [])])
+	linea_actual = Linea(new_id_linea, "Nueva Linea", [255, 0, 0], [Trayecto([], [], [])])
 	
 	# --- Binds ---
 	
 	top_lin.bind("<Return>", guardar)
-	top_lin.bind("<Escape>", cancelar_linea)
+	top_lin.bind("<Escape>", cancelar_linea) # TODO : SI LE DA A ESCAPE PERO NO HA EMPEZADO A CREAR UNA RUTA -> CERRAR
 	
 	top_lin.protocol("WM_DELETE_WINDOW",  cerrar_ventana)
 	
@@ -1381,6 +1555,7 @@ ruta_actual = Ruta(0, [])
 
 cargar_ciudades()
 cargar_rutas()
+cargar_lineas() # TODO : ACTIVATE WHEN FINISHED
 
 # . Mainloop .
 

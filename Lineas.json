@@ -1,0 +1,89 @@
+[
+    {
+        "id": 0,
+        "nombre": "Nombre",
+        "color": [
+            255,
+            0,
+            0
+        ],
+        "trayectos": [
+            {
+                "puntos": [
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 0
+                    },
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 1
+                    },
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 0
+                    }
+                ],
+                "llegadas": [
+                    "0000",
+                    "0100",
+                    "0200"
+                ],
+                "salidas": [
+                    "0005",
+                    "0105",
+                    "0205"
+                ]
+            },
+            {
+                "puntos": [
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 0
+                    },
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 3
+                    },
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
+                        "id_ciudad": 0
+                    }
+                ],
+                "llegadas": [
+                    "0000",
+                    "0100",
+                    "0200"
+                ],
+                "salidas": [
+                    "0005",
+                    "0105",
+                    "0205"
+                ]
+            }
+        ]
+    }
+]

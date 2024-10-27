@@ -310,7 +310,7 @@ def getCiudades(idC, idQ): # Devuelve la lista de todas las ciudades disponibles
 	global finalciudades, finalrutas
 	
 	if (idC == None):
-		after = [c.nombre for c in finalciudades]
+		after = [ c.nombre for c in finalciudades]
 		if (idQ != None): after.remove(finalciudades[getCiudadId(idQ)].nombre)
 		return after
 	
@@ -997,7 +997,6 @@ def cambiarHorario(dir, copiar = True): # dir es la direccion en la que nos move
 		lineaDel.destroy()
 		lineaDel = Button(top, text = "Borrar linea", command = borrarLinea)
 		lineaDel.place(x = 330, y = 95 + (length * 30))
-	
 	else: # Estamos "out of bounds" por lo que hay que crear una nueva posicion
 		if (posActual < 0):
 			posActual = 0
@@ -1279,7 +1278,6 @@ def addParada(pos = "None", lleg = "0000", sali = "0005", autoV = False): # Aña
 
 def elegirColorTren():
 	global colorTren
-	
 	colorTren.configure(bg = colorchooser.askcolor(title ="Elige un color")[1])
 
 def nuevoTren():

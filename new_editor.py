@@ -8,13 +8,13 @@ from tkinter import colorchooser
 
 # ========= TODO =========
 
-# Borrar ciudades
+# Bug : Doble click en el mismo lugar hace que se guarde el mismo lugar 2 veces
 
 
 # Guardar el nombre de la linea de tren antes de guardarla (maybe a check to see if the line we are editing already exists ????)
-# Borrar rutas de trenes : (backspace = quitar punto (si se esta moviendo punto) ; escape / delete = borrar)
 # We are missing the whole route thingy for the lineas creadas -> tenemos las paradas que deberia hacer y las horas a las que deberia parar por cada parada, pero no sabemos que ruta sigue...
 # Boton de Nueva linea sigue accesible -> se deberia eliminar en linea_elegida
+# Add funciones boton escape
 
 # ========= VARIABLES =========
 
@@ -301,7 +301,7 @@ def calcular_distancia(coords1, coords2):
 	return math.sqrt( (coords1[0] - coords2[0])**2 + (coords1[1] - coords2[1])**2 )
 
 def calcular_distancia_punto(punto1, punto2, coord):
-	return abs( (punto2[1] - punto1[1])*coord[0] - (punto2[0] - punto1[0])*coord[1] + punto2[0]*punto1[1] - punto2[1]*punto1[0] ) / math.sqrt( (punto2[1] - punto1[1])**2 + (punto2[0] - punto1[0])**2 )
+	return abs( (punto2[1] - punto1[1])*coord[0] - (punto2[0] - punto1[0])*coord[1] + punto2[0]*punto1[1] - punto2[1]*punto1[0] ) / ( math.sqrt( (punto2[1] - punto1[1])**2 + (punto2[0] - punto1[0])**2 ) + 1e-16 )
 
 # . Posiciones en arrays .
 
@@ -572,7 +572,7 @@ def borrar_ciudades():
 	puntos_ciudades	= []
 
 def dibujar_ciudades():
-	global ciudades, puntos_ciudades
+	global canvas, ciudades, puntos_ciudades
 	
 	for c in ciudades:
 		puntos_ciudades.append(canvas.create_rectangle(c.coords[0] - size_rectangulo, c.coords[1] - size_rectangulo, c.coords[0] + size_rectangulo, c.coords[1] + size_rectangulo, fill = 'red', activefill = 'cyan'))
@@ -664,6 +664,12 @@ def cancelarCiudad(event = None):
 def click_ciudad(event):
 	global ventana_nombre, input_nombre, new_ciudad_coords
 	
+	# . Sanity check #
+	
+	if ventana_nombre != None: return
+	
+	# . Coger coords .
+	
 	new_ciudad_coords = [event.x, event.y]
 	
 	# --- Preguntar nombre ---
@@ -697,6 +703,8 @@ def click_ruta(event):
 	# --- Buscar ciudad cercana ---
 	
 	coords = [event.x, event.y]
+	
+	if calcular_distancia(coords, ruta_actual.puntos[-1].coords) < 5: return
 	
 	click_ciudad = None
 	for c in ciudades:
@@ -960,7 +968,121 @@ def mmove(event):
 
 # . Borrar .
 
-# TODO : DO
+def borrar_punto_ruta():
+	global ruta_actual, ruta_moviendo, punto_moviendo, rutas, estado_ruta
+	
+	# . Sanity check .
+	
+	if estado_ruta != 2: return
+	
+	# --- Quitar punto de la lista ---
+	
+	del ruta_actual.puntos[punto_moviendo]
+	
+	rutas.insert(ruta_moviendo, [])
+	rutas[ruta_moviendo] = deepcopy(ruta_actual)
+	
+	# --- Resetear estado ---
+	
+	estado_ruta = 0 # Estado ruta -> Nada
+	
+	ruta_actual = Ruta(0, []) # Resetear ruta actual
+	
+	# --- Redibujar ---
+	
+	borrar_ruta_actual()
+	
+	borrar_rutas()
+	dibujar_rutas()
+
+def borrar_ruta():
+	global ruta_actual, estado_ruta
+	
+	# . Sanity check .
+	
+	if estado_ruta != 2: return
+	
+	# --- Resetear estado ---
+	
+	estado_ruta = 0 # Estado ruta -> Nada
+	
+	ruta_actual = Ruta(0, []) # Resetear ruta actual
+	
+	# --- Redibujar ---
+	
+	borrar_ruta_actual()
+	
+	borrar_rutas()
+	dibujar_rutas()
+
+def borrar_ciudad(): # TODO : HANDLE IF CIUDAD PART OF RUTA
+	global canvas, ciudades, pos_ciudad, moviendo_ciudad, canvas, texto_ciudad, puntos_ciudades
+	
+	# --- Mirar que ciudad se está modificando ---
+	
+	if pos_ciudad == None: return # Si no se está modificando ninguna ciudad -> return
+	
+	# --- Borrar el punto visual ---
+	
+	canvas.delete(puntos_ciudades[pos_ciudad])
+	del puntos_ciudades[pos_ciudad]
+	
+	# --- Borrar la ciudad de la lista de ciudades ---
+	
+	del ciudades[pos_ciudad]
+	
+	# --- Resetear todo	---
+	
+	# . Vriables .
+	
+	pos_ciudad = None
+	
+	moviendo_ciudad = False
+	
+	# . Redibujar .
+	
+	canvas.delete(texto_ciudad)
+	texto_ciudad = None
+	
+	moviendo_ciudad = False
+	
+	print(len(puntos_ciudades))
+
+def borrar(event = None): # Backspace # TODO : FINISH LINEA
+	global status
+	
+	if status == 0: # Estamos modificando una ciudad
+		borrar_ciudad()
+	elif status == 1: # Estamos modificando una ruta
+		borrar_punto_ruta()
+	else: # Estamos en la ventana modificando una linea
+		return
+	
+	return
+
+def suprimir(event = None): # Delete # TODO : FINISH LINEA
+	global status
+	
+	if status == 0: # Estamos modificando una ciudad
+		borrar_ciudad()
+	elif status == 1: # Estamos modificando una ruta
+		borrar_ruta()
+	else : # Estamos en la ventana modificando una linea
+		return
+	
+	return
+
+def escape(event = None): # Escape # TODO : FINISH CIUDADES, RUTAS Y LINEA
+	global status
+	
+	if status == 0: # Estamos modificando una ciudad
+		return
+	elif status == 1: # Estamos modificando una ruta
+		return
+	else : # Estamos en la ventana modificando una linea
+		return
+	
+	return
 
 # --- Click managers ---
 
@@ -1533,6 +1655,12 @@ root.bind("<r>", lambda event, a = 1 : change_status(a))
 root.bind("<l>", lambda event, a = 2 : change_status(a))
 
 # . Teclas .
+
+root.bind("<BackSpace>", borrar)
+
+root.bind("<Delete>", suprimir)
+
+root.bind("<Escape>", escape)
 
 root.bind("<s>", guardar)
 root.bind("<S>", guardar)

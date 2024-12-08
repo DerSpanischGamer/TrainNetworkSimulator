@@ -73,16 +73,32 @@
         "puntos": [
             {
                 "coords": [
-                    971,
-                    134
+                    748,
+                    503
                 ],
                 "parada": false,
                 "id_ciudad": null
             },
             {
                 "coords": [
-                    927,
-                    220
+                    876,
+                    476
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    976,
+                    482
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1015,
+                    540
                 ],
                 "parada": false,
                 "id_ciudad": null

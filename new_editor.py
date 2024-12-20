@@ -8,13 +8,13 @@ from tkinter import colorchooser
 
 # ========= TODO =========
 
-# Bug : Doble click en el mismo lugar hace que se guarde el mismo lugar 2 veces
+# Guardar lineas -> mejorar
 
-
+# No se pueden borrar lineas de tren
 # Guardar el nombre de la linea de tren antes de guardarla (maybe a check to see if the line we are editing already exists ????)
-# We are missing the whole route thingy for the lineas creadas -> tenemos las paradas que deberia hacer y las horas a las que deberia parar por cada parada, pero no sabemos que ruta sigue...
 # Boton de Nueva linea sigue accesible -> se deberia eliminar en linea_elegida
 # Add funciones boton escape
+# Hacer que se puedan hacer saltos entre lineas
 
 # ========= VARIABLES =========
 
@@ -75,6 +75,8 @@ linea_actual = None # Clase Linea de la linea actual que se esta editando
 top_lin = None # Ventana de linea
 
 pos_trayecto = 0 # Posicion del trayecto en linea.trayectos[pos_trayecto] que se esta editando
+
+current_ruta = None # Clase Ruta que guarda los puntos por los que tiene que pasar el tren entre paradas
 
 lin = None # String Var de las lineas disponibles
 selecLn = None # Dropdown menu para seleccionar linea existente
@@ -143,12 +145,13 @@ class Trayecto:
 		self.salidas = salidas
 
 class Linea:
-	def __init__(self, id, nombre, color, trayectos):
+	def __init__(self, id, nombre, color, trayectos, rutas):
 		self.id = id
 		self.nombre = nombre
 		self.color = color
 		
 		self.trayectos = trayectos
+		self.rutas = rutas
 
 # . Clases visuales .
 
@@ -314,9 +317,18 @@ def get_posicion_ciudad(id_c):
 	
 	return None
 
-# . Route finder .
+def get_coords_ciudad(id_c):
+	global ciudades
+	
+	pos_c = get_posicion_ciudad(id_c)
+	
+	if pos_c == None: return None
+	
+	return ciudades[pos_c].coords
 
-def ciudades_accesibles(nombre_ciudad): # TODO : AQUI SEGURO QUE SE PUEDE OPTIMIZAR PRE-COMPILANDO LOS SETS -> LOOKUP TABLE
+# . Ciudad finder .
+
+def ciudades_accesibles(nombre_ciudad): # TODO : VERIFICAR QUE LAS CIUDADES QUE SE PUEDEN SELECCIONAR TIENEN OTRAS CIUDADES A LAS QUE SE PUEDE IR ; AQUI SEGURO QUE SE PUEDE OPTIMIZAR PRE-COMPILANDO LOS SETS -> LOOKUP TABLE
 	global rutas, ciudades
 	
 	if nombre_ciudad == None: return [c.nombre for c in ciudades] # Si id_ciudad es None -> devolver todas las ciudades
@@ -446,7 +458,9 @@ def guardar_rutas():
 	print(f"{len(rutas)} rutas guardadas")
 
 def guardar_lineas():
-	global lineasF, lineas, linea_actual, estado_linea # TODO : CON ESTADO LINEA HACER LA DIFERENCIA ENTRE MODIFICAR Y CREAR NUEVA LINEA
+	global lineasF, lineas, linea_actual, current_ruta, estado_linea # TODO : CON ESTADO LINEA HACER LA DIFERENCIA ENTRE MODIFICAR Y CREAR NUEVA LINEA
+	
+	linea_actual.rutas = deepcopy(current_ruta)
 	
 	if linea_actual != None:
 		if insertar_linea_actual() == False:
@@ -493,7 +507,7 @@ def cargar_rutas():
 	except JSONDecodeError:
 		pass
 
-def cargar_lineas(): # TODO : FINISH
+def cargar_lineas():
 	global lineas, lineasF, linea_actual
 	
 	with open(lineasF, "r") as f:
@@ -502,13 +516,19 @@ def cargar_lineas(): # TODO : FINISH
 		lineas = []
 		for linea_data in data:
 			trayectos = []
+			rutas = []
 			
 			for trayecto_data in linea_data['trayectos']:
 				puntos = [Punto(**punto_data) for punto_data in trayecto_data['puntos']]
 				trayecto = Trayecto(puntos=puntos, salidas=trayecto_data['salidas'], llegadas=trayecto_data['llegadas'])
 				trayectos.append(trayecto)
 			
-			linea = Linea(id=linea_data['id'], nombre=linea_data['nombre'], color=linea_data['color'], trayectos = trayectos)
+			for ruta_data in linea_data['rutas']:
+				puntos = [Punto(**punto_data) for punto_data in trayecto_data['puntos']]
+				ruta = Ruta(id=ruta_data['id'], puntos=puntos)
+				rutas.append(ruta)
+			
+			linea = Linea(id=linea_data['id'], nombre=linea_data['nombre'], color=linea_data['color'], trayectos=trayectos, rutas=rutas)
 			lineas.append(linea)
 
 # --- Status manager ---
@@ -608,8 +628,148 @@ def borrar_ruta_actual():
 def dibujar_ruta_actual():
 	global canvas, ruta_actual, lineas_ruta_actual
 	
+	# !!! SIEMPRE VA DESPUES DE boorar_ruta_actual !!!
+	
 	for i in range(len(ruta_actual.puntos) - 1):
-		lineas_ruta_actual.append(canvas.create_line(ruta_actual.puntos[i].coords[0], ruta_actual.puntos[i].coords[1], ruta_actual.puntos[i + 1].coords[0], ruta_actual.puntos[i + 1].coords[1]))
+		lineas_ruta_actual.append(canvas.create_line(ruta_actual.puntos[i].coords, ruta_actual.puntos[i + 1].coords))
+
+def dibujar_linea_ruta():
+	global current_ruta, pos_trayecto, linea_ruta_actual
+	
+	# !!! SIEMPRE VA DESPUES DE boorar_ruta_actual !!!
+	
+	if len(current_ruta[pos_trayecto].puntos) < 2: return
+	
+	for i in range(len(current_ruta[pos_trayecto].puntos) - 1):
+		lineas_ruta_actual.append(canvas.create_line(current_ruta[pos_trayecto].puntos[i].coords[0], current_ruta[pos_trayecto].puntos[i].coords[1], current_ruta[pos_trayecto].puntos[i + 1].coords[0], current_ruta[pos_trayecto].puntos[i + 1].coords[1], fill='yellow', width=3))
+
+# --- Route code ----
+
+# . Low level .
+
+def rutasConCiudad(ciudad):
+	global rutas
+	
+	rutas_con_c = []
+	
+	i = 0
+	for r in rutas:
+		for p in r.puntos:
+			if p.id_ciudad == ciudad:
+				rutas_con_c.append(i)
+				break
+		
+		i += 1
+	
+	return rutas_con_c
+
+def ruta_entre_ciudades(init, dest): # TODO : SALTOS ENTRE RUTAS
+	global rutas
+	
+	# . Init vars .
+	
+	posibles_rutas = [] # Array con las posibles rutas (en forma de array) entre init -> dest
+	
+	rutas_con_paradas = list(set(rutasConCiudad(init)).intersection(set(rutasConCiudad(dest)))) # Lista de ids con las rutas que tienen las dos paradas (init y dest)
+	
+	if len(rutas_con_paradas) == 0:
+		print("No hay rutas disponibles")
+		return posibles_rutas
+	
+	modo_busqueda = 0 # -1 primero se ha encontrado el destino ; 0 se sigue buscando alguna parada ; 1 primero se ha encontrado el inicio
+	
+	# . Buscar rutas .
+	
+	i = 0
+	
+	for r in rutas_con_paradas:
+		
+		modo_busqueda = 0
+		posibles_rutas.append([])
+		
+		for p in rutas[r].puntos:
+			if p.id_ciudad == init:
+				posibles_rutas[i].append(deepcopy(p))
+				
+				if modo_busqueda == -1: break
+				elif modo_busqueda == 0: modo_busqueda = 1
+			
+			elif p.id_ciudad == dest:
+				posibles_rutas[i].append(deepcopy(p))
+				
+				if modo_busqueda == 0:   modo_busqueda = -1
+				elif modo_busqueda == 1: break
+			else:
+				if modo_busqueda != 0: posibles_rutas[i].append(deepcopy(p))
+		
+		# Girar si necesario
+		
+		if modo_busqueda == -1: posibles_rutas[i].reverse()
+		
+		# Aumentar i
+		
+		i += 1
+	
+	# . Acabar .
+	
+	return posibles_rutas
+
+# . High level .
+
+def crearRutaLinea():
+	global current_ruta
+	
+	current_ruta = [Ruta(0, [])] # El id de la ruta no es relevant en este contexto
+
+def addParadaRutaLinea(init, dest):
+	global current_ruta, pos_trayecto
+	
+	temp_ruta = ruta_entre_ciudades(init, dest)
+	
+	if len(temp_ruta) == 0:
+		print("Ruta imposible : to handle")
+		return # Ruta imposible
+	elif len(temp_ruta) == 1:
+		current_ruta[pos_trayecto].puntos.extend(temp_ruta[0][1:])
+	else:
+		print(f"Multiples rutas posibles {len(temp_ruta)}, to handle \n")
+		
+		for t in temp_ruta:
+			for p in t:
+				print(p.coords)
+			print()
+		
+		return # Multiples rutas posibles	
+
+def addTrayectoRuta():
+	global current_ruta, pos_trayecto
+	
+	if pos_trayecto == 0: current_ruta.insert(0, deepcopy(current_ruta[0]))
+	else: current_ruta.append(deepcopy(current_ruta[-1]))
+
+def quitarParadaRuta(depth=-1): # NOT WORKING IE 1. Morges 2. GE 2. GE-AP Quitar GE-AP (GE sigue)
+	global ciudades, linea_actual, current_ruta, pos_trayecto
+	
+	# --- Identificar cuando tiene que pararse ---
+	
+	id_stop = linea_actual.trayectos[pos_trayecto].puntos[depth].id_ciudad
+	
+	# --- Quitar hasta la ultima parada ---
+	
+	i = len(current_ruta[pos_trayecto].puntos) - 2
+	
+	while True:
+		if current_ruta[pos_trayecto].puntos[i].id_ciudad == id_stop: break
+		
+		i -= 1
+	
+	del current_ruta[pos_trayecto].puntos[i+1:]
+	
+	# --- Redibujar ---
+	
+	borrar_ruta_actual()
+	
+	dibujar_linea_ruta()
 
 # --- Funciones clicks ---
 
@@ -1243,12 +1403,35 @@ def cambiarTrayecto(dir, copiar = True, auto = False):
 	
 	trayecto_actual.set("Horario " + str(pos_trayecto + 1) + '/' + str(len(linea_actual.trayectos)))
 
-def paradaSeleccionada(parada):
-	global linea_actual, pos_trayecto, botones_paradas
+def paradaSeleccionada(parada): # TODO : FINISH
+	global linea_actual, current_ruta, pos_trayecto, botones_paradas
+	
+	# --- Get id ciudad ---
+	
+	id_c = get_id_ciudad_con_nombre(parada)
 	
 	# --- Actualizar eleccion ---
 	
-	linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad = get_id_ciudad_con_nombre(parada)
+	linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad = id_c
+	current_ruta[pos_trayecto].puntos[-1] = Punto(coords=get_coords_ciudad(id_c), parada=1, id_ciudad=id_c)
+	
+	if len(linea_actual.trayectos[pos_trayecto].puntos) == 1: return
+	
+	# --- Recalcular ruta ---
+	
+	# . Borrar vieja ruta .
+	
+	quitarParadaRuta(-2)
+	
+	# . Nueva ruta .
+	
+	addParadaRutaLinea(linea_actual.trayectos[pos_trayecto].puntos[-2].id_ciudad, id_c)
+	
+	# --- Redibujar ---
+	
+	borrar_ruta_actual()
+	
+	dibujar_linea_ruta()
 
 def quitarParada():
 	global linea_actual, pos_trayecto, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, botones_paradas
@@ -1301,9 +1484,13 @@ def quitarParada():
 	trayectoDel.place(x = 240, y = 125 + (length * 30))
 	
 	lineaDel.place(x = 330, y = 125 + (length * 30))
+	
+	# --- Quitar de la ruta ---
+	
+	quitarParadaRuta()
 
 def addParada(parada = None, lleg = "0000", sali = "0005"):
-	global top_lin, linea_actual, pos_trayecto, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, botones_paradas
+	global top_lin, linea_actual, pos_trayecto, anadirParada, trayectoAnt, trayectoSig, trayectoDel, lineaDel, botones_paradas, current_ruta
 	
 	# --- Es un nuevo trayecto o uno viejo ---
 	
@@ -1410,6 +1597,18 @@ def addParada(parada = None, lleg = "0000", sali = "0005"):
 		linea_actual.trayectos[pos_trayecto].puntos.append(Punto([0, 0], True, get_id_ciudad_con_nombre(ciud.get())))
 		linea_actual.trayectos[pos_trayecto].llegadas.append(botones_paradas[pos_trayecto].llegadas[-1].get("1.0",'end-1c'))
 		linea_actual.trayectos[pos_trayecto].salidas.append(botones_paradas[pos_trayecto].salidas[-1].get("1.0",'end-1c'))
+	
+	# --- Acutalizar ruta ---
+	
+	if len(linea_actual.trayectos[pos_trayecto].puntos) == 1:
+		current_ruta[pos_trayecto].puntos.append(Punto(coords=deepcopy(get_coords_ciudad(linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad)), parada=1, id_ciudad=linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad))
+	else:
+		addParadaRutaLinea(linea_actual.trayectos[pos_trayecto].puntos[-2].id_ciudad, linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad) # TODO : CAMBIAR PARA CUANDO SE METAN LOS DATOS DE MANERA AUTOMATICA
+	
+	# . Dibujar .
+	
+	borrar_ruta_actual()
+	dibujar_linea_ruta()
 
 # . Ventana management .
 
@@ -1419,7 +1618,7 @@ def cambiar_color_actual():
 	colorLinea.configure(bg = colorchooser.askcolor(title ="Elige un color")[1])
 
 def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
-	global top_lin, estado_linea, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas
+	global top_lin, estado_linea, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas, lineas_ruta_actual
 	
 	# --- Actualizar el estado ---
 	
@@ -1459,7 +1658,15 @@ def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
 	# --- Crear nueva linea vacia ---
 	
 	botones_paradas = [Parada_visual()]
-	linea_actual = Linea(0, "Nombre", [255, 0, 0], [Trayecto([], [], [])])
+	linea_actual = Linea(0, "Nombre", [255, 0, 0], [Trayecto([], [], [])], [Ruta(0, [])])
+	crearRutaLinea()
+	
+	# --- Init el dibujo ---
+	
+	lineas_ruta_actual = []
+	lineas_ruta_actual = []
+	lineas_ruta_actual = []
+	lineas_ruta_actual = []
 	
 	# --- Añadir la primera parada ---
 	
@@ -1613,7 +1820,7 @@ def abrir_ventana_lineas():
 	# . Linea y trayecto actual .
 	
 	pos_trayecto = 0
-	linea_actual = Linea(new_id_linea, "Nueva Linea", [255, 0, 0], [Trayecto([], [], [])])
+	linea_actual = Linea(new_id_linea, "Nueva Linea", [255, 0, 0], [Trayecto([], [], [])], [Ruta(0, [])])
 	
 	# --- Binds ---
 	

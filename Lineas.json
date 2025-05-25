@@ -1,7 +1,7 @@
 [
     {
         "id": 0,
-        "nombre": "Nombre",
+        "nombre": "Linea 0",
         "color": [
             255,
             0,
@@ -16,7 +16,7 @@
                             0
                         ],
                         "parada": true,
-                        "id_ciudad": 0
+                        "id_ciudad": 4
                     },
                     {
                         "coords": [
@@ -24,26 +24,16 @@
                             0
                         ],
                         "parada": true,
-                        "id_ciudad": 1
-                    },
-                    {
-                        "coords": [
-                            0,
-                            0
-                        ],
-                        "parada": true,
-                        "id_ciudad": 0
+                        "id_ciudad": 14
                     }
                 ],
                 "llegadas": [
                     "0000",
-                    "0100",
-                    "0200"
+                    "0100"
                 ],
                 "salidas": [
                     "0005",
-                    "0105",
-                    "0205"
+                    "0105"
                 ]
             }
         ],
@@ -53,27 +43,19 @@
                 "puntos": [
                     {
                         "coords": [
-                            233,
-                            828
+                            689,
+                            459
                         ],
-                        "parada": 1,
-                        "id_ciudad": 0
+                        "parada": true,
+                        "id_ciudad": 4
                     },
                     {
                         "coords": [
-                            221,
-                            815
+                            588,
+                            531
                         ],
-                        "parada": false,
-                        "id_ciudad": 1
-                    },
-                    {
-                        "coords": [
-                            233,
-                            828
-                        ],
-                        "parada": false,
-                        "id_ciudad": 0
+                        "parada": true,
+                        "id_ciudad": 14
                     }
                 ]
             }

@@ -4,10 +4,31 @@
         "puntos": [
             {
                 "coords": [
+                    403,
+                    675
+                ],
+                "parada": true,
+                "id_ciudad": 2
+            },
+            {
+                "coords": [
+                    412,
+                    542
+                ],
+                "parada": true,
+                "id_ciudad": 13
+            }
+        ]
+    },
+    {
+        "id": 1,
+        "puntos": [
+            {
+                "coords": [
                     221,
                     815
                 ],
-                "parada": false,
+                "parada": true,
                 "id_ciudad": 1
             },
             {
@@ -15,45 +36,21 @@
                     233,
                     828
                 ],
-                "parada": false,
+                "parada": true,
                 "id_ciudad": 0
             },
             {
                 "coords": [
-                    233,
-                    806
+                    261,
+                    740
                 ],
                 "parada": false,
                 "id_ciudad": null
             },
             {
                 "coords": [
-                    240,
-                    791
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    251,
-                    766
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    270,
-                    735
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    301,
-                    699
+                    290,
+                    694
                 ],
                 "parada": false,
                 "id_ciudad": null
@@ -63,45 +60,37 @@
                     335,
                     695
                 ],
-                "parada": false,
+                "parada": true,
                 "id_ciudad": 3
             }
         ]
     },
     {
-        "id": 1,
+        "id": 2,
         "puntos": [
             {
                 "coords": [
-                    748,
-                    503
+                    403,
+                    675
                 ],
-                "parada": false,
-                "id_ciudad": null
+                "parada": true,
+                "id_ciudad": 2
             },
             {
                 "coords": [
-                    876,
-                    476
+                    588,
+                    531
                 ],
-                "parada": false,
-                "id_ciudad": null
+                "parada": true,
+                "id_ciudad": 14
             },
             {
                 "coords": [
-                    976,
-                    482
+                    689,
+                    459
                 ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1015,
-                    540
-                ],
-                "parada": false,
-                "id_ciudad": null
+                "parada": true,
+                "id_ciudad": 4
             }
         ]
     }

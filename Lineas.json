@@ -660,6 +660,14 @@
                             0
                         ],
                         "parada": true,
+                        "id_ciudad": 21
+                    },
+                    {
+                        "coords": [
+                            0,
+                            0
+                        ],
+                        "parada": true,
                         "id_ciudad": 22
                     },
                     {
@@ -698,6 +706,7 @@
                     "0844",
                     "0851",
                     "0906",
+                    "0925",
                     "0933",
                     "0938",
                     "0943",
@@ -714,6 +723,7 @@
                     "0845",
                     "0853",
                     "0908",
+                    "0926",
                     "0934",
                     "0939",
                     "0944",
@@ -1303,7 +1313,7 @@
                     },
                     {
                         "coords": [
-                            1138,
+                            1139,
                             174
                         ],
                         "parada": false,
@@ -1312,14 +1322,14 @@
                     {
                         "coords": [
                             1157,
-                            176
+                            175
                         ],
                         "parada": false,
                         "id_ciudad": null
                     },
                     {
                         "coords": [
-                            1166,
+                            1165,
                             172
                         ],
                         "parada": false,
@@ -1335,7 +1345,7 @@
                     },
                     {
                         "coords": [
-                            1195,
+                            1196,
                             188
                         ],
                         "parada": false,
@@ -1344,23 +1354,31 @@
                     {
                         "coords": [
                             1219,
-                            195
+                            196
                         ],
                         "parada": false,
                         "id_ciudad": null
                     },
                     {
                         "coords": [
-                            1234,
-                            191
+                            1232,
+                            190
                         ],
                         "parada": false,
                         "id_ciudad": null
                     },
                     {
                         "coords": [
-                            1242,
-                            202
+                            1238,
+                            194
+                        ],
+                        "parada": true,
+                        "id_ciudad": 21
+                    },
+                    {
+                        "coords": [
+                            1243,
+                            203
                         ],
                         "parada": false,
                         "id_ciudad": null
@@ -1368,7 +1386,7 @@
                     {
                         "coords": [
                             1258,
-                            199
+                            198
                         ],
                         "parada": false,
                         "id_ciudad": null

@@ -381,7 +381,7 @@ def get_id_ciudad_con_nombre(nombre_ciudad):
 def get_posicion_linea(nombre_linea):
 	global lineas
 	
-	for i in range(len(nombre_linea)):
+	for i in range(len(lineas)):
 		if lineas[i].nombre == nombre_linea: return i
 	
 	return None

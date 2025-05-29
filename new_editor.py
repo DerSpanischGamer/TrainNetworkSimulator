@@ -8,10 +8,13 @@ from tkinter import colorchooser
 
 # ========= TODO =========
 
-# TODO : CHECK : DIBUJAR RUTA -> BUG (MIGHT COME FROM DIBUJAR LINEAS RUTA)
+# TODO : MODIFICAR RUTA (click derecho) ESTA BUGUEADO
 
+# TODO : QUITAR EL BOTON DE NUEVA LINEA CUANDO SE ESTA EDITANDO UNA
+# TODO : GUARDAR DONDE ESTABA LA VENTANA DE NUEVA LINEA POR ULTIMA VEZ PARA QUE CUANDO SE REABRA ESTE EN EL MISMO LUGAR
 # TODO : Guardar el nombre de la linea de tren antes de guardarla (maybe a check to see if the line we are editing already exists ????)
 # TODO : Guardar lineas: mejorar
+# TODO : BUG : CUANDO SE ESTA EDITANDO UNA LINEA SE PUEDE GUARDAR
 
 # ========= VARIABLES =========
 
@@ -88,7 +91,19 @@ trayectoSig = None # Boton trayecto siguiente
 trayectoDel = None # Boton borrar trayecto
 lineaDel = None # Boton borrar linea
 
-botones_paradas = None # Clase en la que se guardaaran todos los botones
+botones_paradas = None # Clase en la que se guardaran todos los botones
+
+# Multiples opciones de ruta para una linea
+
+rutas_posibles = None # Lista de listas con puntos. Cada lista tiene los puntos de diferentes opciones de ruta
+opcion_seleccionada = 0 # Option de las multiples que es seleccionada
+nombresRutas = [] # Lista con los nombres de las posibles rutas
+
+lineas_ruta_posibles_opciones = None # Lista donde se guardan las lineas sobre canvas de una posible ruta cuando hay varias rutas posibles (se dibuja en verde)
+
+selec = None # Ventana para seleccionar entre multiples posibles rutas
+rutaSelectSv = None # StringVar donde se guarda la ruta
+rutaSelect = None # OptionMenu con todas las rutas posibles
 
 # --- Status ---
 
@@ -206,7 +221,7 @@ def checkHora(hora):
 	
 	return (0 <= h < 24) and (0 <= m < 60)
 
-def insertar_linea_actual():
+def validar_linea():
 	global linea_actual, botones_paradas, lineas
 	
 	# --- Actualizar horas ---
@@ -276,17 +291,6 @@ def insertar_linea_actual():
 	
 	if trayectos_ok == False:
 		return False
-	
-	# . Numero de paradas .
-	
-	# --- Insertar linea_actual ---
-	
-	for i in range(len(lineas)):
-		if lineas[i].id == linea_actual.id:
-			lineas[i] = deepcopy(linea_actual)
-			return
-	
-	lineas.append(linea_actual)
 	
 	return True # No ha habido problemas
 
@@ -404,8 +408,6 @@ def generar_nuevo_id_ciudad():
 def generar_nuevo_id_ruta():
 	global rutas, new_id_ruta
 	
-	print([r.id for r in rutas])
-	
 	i = 0
 	while True:
 		salir = True
@@ -465,17 +467,48 @@ def guardar_rutas():
 	print(f"{len(rutas)} rutas guardadas")
 
 def guardar_lineas():
-	global stautus, estado_linea, lineasF, lineas, linea_actual, current_ruta, estado_linea # TODO : CON ESTADO LINEA HACER LA DIFERENCIA ENTRE MODIFICAR Y CREAR NUEVA LINEA
+	global estado_linea, lineasF, lineas, linea_actual, current_ruta, estado_linea, id_linea
 	
-	if estado_linea != 0: # TODO : Nueva linea ! estado_linea == 2 -> Modificando linea
-		linea_actual.rutas = deepcopy(current_ruta)
+	if estado_linea == 0: return # Sanity check
+	
+	# --- Verificar que los horarios son correctos ---
+	
+	if estado_linea != 4 and linea_actual != None:
+		if validar_linea() == False:
+			print("Error : no se ha podido guardar la linea de tren")
+			return
+	
+	# --- Actualizar nombre y rutas ---
+	
+	linea_actual.nombre = nombreLin.get("1.0",'end-1c')
+	linea_actual.rutas = deepcopy(current_ruta)
+	
+	if estado_linea == 1: # Nueva linea
 		
-		# --- Verificar que los horarios son correctos ---
+		# . Añadir la nueva linea al array de lineas .
 		
-		if linea_actual != None:
-			if insertar_linea_actual() == False:
-				print("Error : no se ha podido guardar la linea de tren")
-				return
+		lineas.append(deepcopy(linea_actual))
+		
+		# . Cambiar el estado a "Modificando linea" visto que ya esta en el array principal .
+		
+		estado_linea = 2
+		
+		generar_nuevo_id_linea()
+		
+	elif estado_linea == 2: # Modificando linea
+		pos_linea = None
+		for i in range(len(lineas)):
+			if lineas[i].id == linea_actual.id:
+				pos_linea = i
+				break
+		
+		lineas[pos_linea] = deepcopy(linea_actual)
+		
+	elif estado_linea == 4:
+		print("Linea borrada")
+	else:
+		print("Invalid status for estado lineas en guardar lineas")
+		return
 	
 	# --- Guardar todas las lineas ---
 	
@@ -641,6 +674,22 @@ def dibujar_rutas():
 			lin = canvas.create_line(r.puntos[i].coords[0], r.puntos[i].coords[1], r.puntos[i + 1].coords[0], r.puntos[i + 1].coords[1])
 			lineas_rutas[-1].append(lin)
 
+def borrar_ruta_posibles_opciones():
+	global canvas, lineas_ruta_posibles_opciones
+	
+	for linea in lineas_ruta_posibles_opciones:
+		canvas.delete(linea)
+	
+	lineas_ruta_posibles_opciones = []
+
+def dibujar_ruta_posibles_opciones():
+	global canvas, lineas_ruta_posibles_opciones, rutas_posibles, opcion_seleccionada
+	
+	if len(rutas_posibles[opcion_seleccionada]) < 2: return
+	
+	for i in range(len(rutas_posibles[opcion_seleccionada]) - 1):
+		lineas_ruta_posibles_opciones.append(canvas.create_line(rutas_posibles[opcion_seleccionada][i].coords[0], rutas_posibles[opcion_seleccionada][i].coords[1], rutas_posibles[opcion_seleccionada][i+1].coords[0], rutas_posibles[opcion_seleccionada][i+1].coords[1], fill='green', width=3))
+
 def borrar_ruta_actual():
 	global canvas, lineas_ruta_actual
 	
@@ -747,6 +796,125 @@ def crearRutaLinea():
 	
 	current_ruta = [Ruta(0, [])] # El id de la ruta no es relevant en este contexto
 
+def rutaSeleccionadaPosiblesRutas(pos):
+	global nombresRutas, opcion_seleccionada
+	
+	# --- Buscar la posicion ---
+	
+	for i in range(len(nombresRutas)):
+		if pos == nombresRutas[i]:
+			opcion_seleccionada = i
+			break
+	
+	# --- Redibujar ---
+	
+	borrar_ruta_posibles_opciones()
+	dibujar_ruta_posibles_opciones()
+
+def posibilidadesCerrar(event = None):
+	global selec, rutaSelectSv, rutaSelect, rutas_posibles, opcion_seleccionada, nombresRutas
+	
+	# --- Cerar la ventana ---
+	
+	selec.destroy()
+	del selec
+	
+	# --- Resetear variables ---
+	
+	selec = None
+	rutaSelectSv = None
+	rutaSelect = None
+	
+	rutas_posibles = None
+	
+	opcion_seleccionada = 0
+	nombresRutas = None
+
+def aceptarPosiblesRutas(event = None):
+	global current_ruta, pos_trayecto, rutas_posibles, opcion_seleccionada
+	
+	# --- Añadir la ruta seleccionada a la principal ---
+	
+	for i in range(len(rutas_posibles[opcion_seleccionada])):
+		rutas_posibles[opcion_seleccionada][i].parada = False
+	
+	current_ruta[pos_trayecto].puntos.extend(rutas_posibles[opcion_seleccionada][1:])
+	current_ruta[pos_trayecto].puntos[-1].parada = True
+	
+	# --- Cerrar la ventana ---
+	
+	posibilidadesCerrar()
+	
+	# --- Redibujar la pantalla ---
+	
+	borrar_ruta_posibles_opciones()
+	
+	borrar_ruta_actual()
+	dibujar_linea_ruta()
+
+def cancelarPosiblesRutas(event = None):
+	
+	# --- Cerrar ventana ---
+	
+	posibilidadesCerrar()
+	
+	# --- Borrar la linea temporal ---
+	
+	borrar_ruta_posibles_opciones()
+	
+	# --- Quitar parada ---
+	
+	quitarParada()
+
+def generarNombreRutas(rutas):  # TODO : MEJORAR !!!
+	return [f'Ruta {i+1}' for i in range(len(rutas))]
+
+def mostrarPosiblesRutas(rutas):
+	global selec, rutaSelectSv, rutaSelect, rutas_posibles, lineas_ruta_posibles_opciones, opcion_seleccionada, nombresRutas
+	
+	# --- Crear ventana ---
+	
+	# . Ventana .
+	
+	selec = Toplevel()
+	
+	selec.geometry("200x200")
+	selec.title("Selecciona una ruta")
+	selec.resizable(False, False)
+	selec.protocol("WM_DELETE_WINDOW", cancelarPosiblesRutas) # Llamar funcion cuando se cierre el Toplevel
+	
+	# . Poblar ventana .
+	
+	Label(selec, text = "Elige una ruta").place(x = 50, y = 20)
+	Button(selec, text = "Aceptar", command = aceptarPosiblesRutas).place(x = 50, y = 100)
+	
+	# . Multiple option choser .
+	
+	nombresRutas = generarNombreRutas(rutas)
+	
+	opcion_seleccionada = 0
+	
+	rutaSelectSv = StringVar()
+	rutaSelectSv.set(nombresRutas[opcion_seleccionada])
+	
+	rutaSelect = OptionMenu(selec, rutaSelectSv, *nombresRutas, command = rutaSeleccionadaPosiblesRutas)
+	rutaSelect.place(x = 50, y = 50)
+	
+	# . Key kinds .
+	
+	selec.bind("<Return>", aceptarPosiblesRutas)
+	selec.bind("<Escape>", cancelarPosiblesRutas)
+	
+	# --- Compartir rutas ---
+	
+	rutas_posibles = deepcopy(rutas)
+	
+	# --- Dibujar en la pantalla principal ---
+	
+	lineas_ruta_posibles_opciones = []
+	
+	dibujar_ruta_posibles_opciones() # Dibujar la primera ruta cause why fucking not
+
 def addParadaRutaLinea(init, dest):
 	global current_ruta, pos_trayecto
 	
@@ -755,13 +923,15 @@ def addParadaRutaLinea(init, dest):
 	if len(temp_ruta) == 0:
 		print("Ruta imposible : to handle")
 		return # Ruta imposible
-	elif len(temp_ruta) == 1:
+	elif len(temp_ruta) == 1:			
+		
+		for i in range(len(temp_ruta[0])):
+			temp_ruta[0][i].parada = False
+		
 		current_ruta[pos_trayecto].puntos.extend(temp_ruta[0][1:])
 		current_ruta[pos_trayecto].puntos[-1].parada = True
 	else:
-		print(f"Multiples rutas posibles {len(temp_ruta)}, to handle \n") # TODO : HANDLE THIS SITUATION
-		
-		return # Multiples rutas posibles	
+		mostrarPosiblesRutas(temp_ruta)
 
 def addTrayectoRuta():
 	global current_ruta, pos_trayecto
@@ -775,6 +945,10 @@ def quitarParadaRuta(depth=-1):
 	# --- Identificar cuando tiene que pararse ---
 	
 	id_stop = linea_actual.trayectos[pos_trayecto].puntos[depth].id_ciudad
+	
+	# --- Multiples opciones safety check ---
+	
+	if current_ruta[pos_trayecto].puntos[-1].id_ciudad == id_stop: return # Sanity check: si estamos en este caso es porque estamos borrando una parada para la cual podiamos llegar por diferentes trayectos. Estamos aqui porque si se cancela, la parada ha sido añadida en trayectos, pero no en la ruta, por lo que no hay que quitar nada de la ruta
 	
 	# --- Quitar hasta la ultima parada ---
 	
@@ -802,7 +976,7 @@ def registrarCiudad(event = None):
 	# --- Check nombre ---
 	
 	if len(nuevo_nombre) < 2 or len(nuevo_nombre) > 15:
-		print("El nombre es demasiado corto o largo (min : 2 max : 15)")
+		print("El nombre es demasiado corto o largo (min : 2 max : 15)") # TODO : CLEAR THE INPUT FIELD
 		return
 	
 	if (nuevo_nombre[-1] == '\n'): nuevo_nombre = nuevo_nombre[0:-1]
@@ -886,6 +1060,7 @@ def click_ciudad(event):
 	ventana_nombre.protocol("WM_DELETE_WINDOW",  cancelarCiudad)
 	
 	ventana_nombre.focus_force()
+	input_nombre.focus()
 
 def click_ruta(event):
 	global ciudades, rutas, max_radio_ciudad, estado_ruta
@@ -1450,7 +1625,7 @@ def paradaSeleccionada(parada): # TODO : FINISH
 	# --- Actualizar eleccion ---
 	
 	linea_actual.trayectos[pos_trayecto].puntos[-1].id_ciudad = id_c
-	current_ruta[pos_trayecto].puntos[-1] = Punto(coords=get_coords_ciudad(id_c), parada=1, id_ciudad=id_c)
+	current_ruta[pos_trayecto].puntos[-1] = Punto(coords=get_coords_ciudad(id_c), parada=True, id_ciudad=id_c)
 	
 	if len(linea_actual.trayectos[pos_trayecto].puntos) == 1: return
 	
@@ -1655,7 +1830,7 @@ def cambiar_color_actual():
 	colorLinea.configure(bg = colorchooser.askcolor(title ="Elige un color")[1])
 
 def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
-	global top_lin, estado_linea, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas, lineas_ruta_actual
+	global top_lin, estado_linea, linea_actual, nombreLin, selecLn, colorLinea, horarioAct, trayecto_actual, botones_paradas, lineas_ruta_actual, btn_nuevaLin
 	
 	# --- Actualizar el estado ---
 	
@@ -1663,7 +1838,14 @@ def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
 	
 	# --- Borrar pantalla anterior ---
 	
+	# . Dropmenu para seleccionar .
+	
 	if (selecLn != None): selecLn.destroy()
+	
+	# . Esconder el boton de linea nueva .
+	
+	if btn_nuevaLin != None: btn_nuevaLin.destroy()
+	btn_nuevaLin = None
 	
 	# --- Dibujar nueva pantalla ---
 	
@@ -1695,7 +1877,7 @@ def nueva_linea(nombre_linea = None, color = [255, 0, 0]):
 	# --- Crear nueva linea vacia ---
 	
 	botones_paradas = [Parada_visual()]
-	linea_actual = Linea(0, "Linea " + str(linea_actual.id), [255, 0, 0], [Trayecto([], [], [])], [Ruta(0, [])])
+	linea_actual = Linea(linea_actual.id, "Linea " + str(linea_actual.id), [255, 0, 0], [Trayecto([], [], [])], [Ruta(0, [])])
 	crearRutaLinea()
 	
 	# --- Init el dibujo ---
@@ -1771,6 +1953,12 @@ def cancelar_linea(event = None):
 	elif estado_linea == 2:
 		pos_linea = get_posicion_linea(linea_actual.nombre)
 		del lineas[pos_linea]
+	
+	# --- Guardar cambios ---
+	
+	estado_linea = 4
+	guardar()
+	estado_linea = 0
 	
 	# --- Resetear variables ---
 	

@@ -1,0 +1,394 @@
+[
+    {
+        "id": 0,
+        "nombre": "GE",
+        "coords": [
+            233,
+            828
+        ]
+    },
+    {
+        "id": 1,
+        "nombre": "GE-AP",
+        "coords": [
+            221,
+            815
+        ]
+    },
+    {
+        "id": 2,
+        "nombre": "LS",
+        "coords": [
+            403,
+            675
+        ]
+    },
+    {
+        "id": 3,
+        "nombre": "Morges",
+        "coords": [
+            335,
+            695
+        ]
+    },
+    {
+        "id": 4,
+        "nombre": "BE",
+        "coords": [
+            689,
+            459
+        ]
+    },
+    {
+        "id": 5,
+        "nombre": "ZH",
+        "coords": [
+            1066,
+            240
+        ]
+    },
+    {
+        "id": 6,
+        "nombre": "Delemont",
+        "coords": [
+            658,
+            249
+        ]
+    },
+    {
+        "id": 7,
+        "nombre": "SG",
+        "coords": [
+            1354,
+            211
+        ]
+    },
+    {
+        "id": 8,
+        "nombre": "SH",
+        "coords": [
+            1098,
+            76
+        ]
+    },
+    {
+        "id": 9,
+        "nombre": "Interlaken",
+        "coords": [
+            837,
+            590
+        ]
+    },
+    {
+        "id": 10,
+        "nombre": "Spiez",
+        "coords": [
+            769,
+            591
+        ]
+    },
+    {
+        "id": 11,
+        "nombre": "Olten",
+        "coords": [
+            850,
+            253
+        ]
+    },
+    {
+        "id": 12,
+        "nombre": "NE",
+        "coords": [
+            513,
+            433
+        ]
+    },
+    {
+        "id": 13,
+        "nombre": "Yverdon",
+        "coords": [
+            412,
+            542
+        ]
+    },
+    {
+        "id": 14,
+        "nombre": "FR",
+        "coords": [
+            588,
+            531
+        ]
+    },
+    {
+        "id": 15,
+        "nombre": "BS",
+        "coords": [
+            739,
+            156
+        ]
+    },
+    {
+        "id": 16,
+        "nombre": "IL West",
+        "coords": [
+            828,
+            599
+        ]
+    },
+    {
+        "id": 17,
+        "nombre": "Liestal",
+        "coords": [
+            789,
+            189
+        ]
+    },
+    {
+        "id": 18,
+        "nombre": "Winterthur",
+        "coords": [
+            1128,
+            182
+        ]
+    },
+    {
+        "id": 19,
+        "nombre": "ZH-AP",
+        "coords": [
+            1074,
+            203
+        ]
+    },
+    {
+        "id": 20,
+        "nombre": "ZH-Oerlikon",
+        "coords": [
+            1067,
+            220
+        ]
+    },
+    {
+        "id": 21,
+        "nombre": "Wil",
+        "coords": [
+            1238,
+            194
+        ]
+    },
+    {
+        "id": 22,
+        "nombre": "Uzwil",
+        "coords": [
+            1271,
+            203
+        ]
+    },
+    {
+        "id": 23,
+        "nombre": "Flawil",
+        "coords": [
+            1291,
+            217
+        ]
+    },
+    {
+        "id": 24,
+        "nombre": "Gossau",
+        "coords": [
+            1314,
+            215
+        ]
+    },
+    {
+        "id": 25,
+        "nombre": "Lugano",
+        "coords": [
+            1223,
+            936
+        ]
+    },
+    {
+        "id": 26,
+        "nombre": "Arth-Goldau",
+        "coords": [
+            1073,
+            406
+        ]
+    },
+    {
+        "id": 27,
+        "nombre": "Altdorf",
+        "coords": [
+            1099,
+            479
+        ]
+    },
+    {
+        "id": 28,
+        "nombre": "Zug",
+        "coords": [
+            1059,
+            343
+        ]
+    },
+    {
+        "id": 29,
+        "nombre": "Bellinzona",
+        "coords": [
+            1249,
+            834
+        ]
+    },
+    {
+        "id": 30,
+        "nombre": "Chur",
+        "coords": [
+            1416,
+            497
+        ]
+    },
+    {
+        "id": 31,
+        "nombre": "Landquart",
+        "coords": [
+            1423,
+            435
+        ]
+    },
+    {
+        "id": 32,
+        "nombre": "Sargans",
+        "coords": [
+            1406,
+            418
+        ]
+    },
+    {
+        "id": 33,
+        "nombre": "Singen",
+        "coords": [
+            1166,
+            46
+        ]
+    },
+    {
+        "id": 34,
+        "nombre": "Biel",
+        "coords": [
+            617,
+            362
+        ]
+    },
+    {
+        "id": 35,
+        "nombre": "Solothurn",
+        "coords": [
+            724,
+            330
+        ]
+    },
+    {
+        "id": 36,
+        "nombre": "Rorscharch",
+        "coords": [
+            1402,
+            182
+        ]
+    },
+    {
+        "id": 37,
+        "nombre": "Aarau",
+        "coords": [
+            899,
+            234
+        ]
+    },
+    {
+        "id": 38,
+        "nombre": "Visp",
+        "coords": [
+            845,
+            789
+        ]
+    },
+    {
+        "id": 39,
+        "nombre": "Brig",
+        "coords": [
+            881,
+            775
+        ]
+    },
+    {
+        "id": 40,
+        "nombre": "Domodossola",
+        "coords": [
+            991,
+            878
+        ]
+    },
+    {
+        "id": 41,
+        "nombre": "Thun",
+        "coords": [
+            754,
+            556
+        ]
+    },
+    {
+        "id": 42,
+        "nombre": "Romanshorn",
+        "coords": [
+            1353,
+            138
+        ]
+    },
+    {
+        "id": 43,
+        "nombre": "Amriswil",
+        "coords": [
+            1288,
+            153
+        ]
+    },
+    {
+        "id": 44,
+        "nombre": "Frauenfeld",
+        "coords": [
+            1191,
+            147
+        ]
+    },
+    {
+        "id": 45,
+        "nombre": "Weinfelden",
+        "coords": [
+            1261,
+            140
+        ]
+    },
+    {
+        "id": 46,
+        "nombre": "Moutier",
+        "coords": [
+            669,
+            292
+        ]
+    },
+    {
+        "id": 47,
+        "nombre": "Grenchen",
+        "coords": [
+            671,
+            337
+        ]
+    },
+    {
+        "id": 48,
+        "nombre": "Laufen",
+        "coords": [
+            711,
+            221
+        ]
+    }
+]

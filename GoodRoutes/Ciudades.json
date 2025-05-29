@@ -35,8 +35,8 @@
         "id": 4,
         "nombre": "BE",
         "coords": [
-            689,
-            459
+            688,
+            458
         ]
     },
     {
@@ -139,8 +139,8 @@
         "id": 17,
         "nombre": "Liestal",
         "coords": [
-            789,
-            189
+            788,
+            188
         ]
     },
     {
@@ -195,8 +195,8 @@
         "id": 24,
         "nombre": "Gossau",
         "coords": [
-            1314,
-            215
+            1312,
+            217
         ]
     },
     {
@@ -219,8 +219,8 @@
         "id": 27,
         "nombre": "Altdorf",
         "coords": [
-            1099,
-            479
+            1105,
+            498
         ]
     },
     {
@@ -236,7 +236,7 @@
         "nombre": "Bellinzona",
         "coords": [
             1249,
-            834
+            829
         ]
     },
     {
@@ -259,16 +259,8 @@
         "id": 32,
         "nombre": "Sargans",
         "coords": [
-            1406,
-            418
-        ]
-    },
-    {
-        "id": 33,
-        "nombre": "Singen",
-        "coords": [
-            1166,
-            46
+            1404,
+            416
         ]
     },
     {
@@ -292,7 +284,7 @@
         "nombre": "Rorscharch",
         "coords": [
             1402,
-            182
+            186
         ]
     },
     {
@@ -320,14 +312,6 @@
         ]
     },
     {
-        "id": 40,
-        "nombre": "Domodossola",
-        "coords": [
-            991,
-            878
-        ]
-    },
-    {
         "id": 41,
         "nombre": "Thun",
         "coords": [
@@ -347,8 +331,8 @@
         "id": 43,
         "nombre": "Amriswil",
         "coords": [
-            1288,
-            153
+            1323,
+            146
         ]
     },
     {
@@ -379,8 +363,8 @@
         "id": 47,
         "nombre": "Grenchen",
         "coords": [
-            671,
-            337
+            672,
+            338
         ]
     },
     {
@@ -389,6 +373,550 @@
         "coords": [
             711,
             221
+        ]
+    },
+    {
+        "id": 49,
+        "nombre": "Romont",
+        "coords": [
+            504,
+            586
+        ]
+    },
+    {
+        "id": 50,
+        "nombre": "Renens",
+        "coords": [
+            388,
+            665
+        ]
+    },
+    {
+        "id": 51,
+        "nombre": "Luzern",
+        "coords": [
+            994,
+            403
+        ]
+    },
+    {
+        "id": 52,
+        "nombre": "Martigny",
+        "coords": [
+            561,
+            885
+        ]
+    },
+    {
+        "id": 53,
+        "nombre": "Sion",
+        "coords": [
+            661,
+            823
+        ]
+    },
+    {
+        "id": 54,
+        "nombre": "Sierre",
+        "coords": [
+            722,
+            789
+        ]
+    },
+    {
+        "id": 55,
+        "nombre": "Leuk",
+        "coords": [
+            760,
+            779
+        ]
+    },
+    {
+        "id": 56,
+        "nombre": "Fluelen",
+        "coords": [
+            1101,
+            479
+        ]
+    },
+    {
+        "id": 57,
+        "nombre": "Vevey",
+        "coords": [
+            477,
+            699
+        ]
+    },
+    {
+        "id": 33,
+        "nombre": "Montreux",
+        "coords": [
+            501,
+            715
+        ]
+    },
+    {
+        "id": 40,
+        "nombre": "Aigle",
+        "coords": [
+            521,
+            775
+        ]
+    },
+    {
+        "id": 58,
+        "nombre": "St Maurice",
+        "coords": [
+            535,
+            828
+        ]
+    },
+    {
+        "id": 59,
+        "nombre": "Goschenen",
+        "coords": [
+            1089,
+            597
+        ]
+    },
+    {
+        "id": 60,
+        "nombre": "Erstfeld",
+        "coords": [
+            1111,
+            521
+        ]
+    },
+    {
+        "id": 61,
+        "nombre": "Airolo",
+        "coords": [
+            1099,
+            669
+        ]
+    },
+    {
+        "id": 63,
+        "nombre": "Biasca",
+        "coords": [
+            1224,
+            754
+        ]
+    },
+    {
+        "id": 64,
+        "nombre": "Bodio",
+        "coords": [
+            1207,
+            743
+        ]
+    },
+    {
+        "id": 65,
+        "nombre": "Lavorgo",
+        "coords": [
+            1176,
+            702
+        ]
+    },
+    {
+        "id": 66,
+        "nombre": "Faido",
+        "coords": [
+            1162,
+            689
+        ]
+    },
+    {
+        "id": 67,
+        "nombre": "Ambri-Piota",
+        "coords": [
+            1125,
+            674
+        ]
+    },
+    {
+        "id": 62,
+        "nombre": "Palezieux",
+        "coords": [
+            477,
+            663
+        ]
+    },
+    {
+        "id": 68,
+        "nombre": "Nyon",
+        "coords": [
+            264,
+            739
+        ]
+    },
+    {
+        "id": 69,
+        "nombre": "Gland",
+        "coords": [
+            275,
+            725
+        ]
+    },
+    {
+        "id": 70,
+        "nombre": "Oesingen",
+        "coords": [
+            780,
+            290
+        ]
+    },
+    {
+        "id": 71,
+        "nombre": "Sursee",
+        "coords": [
+            916,
+            345
+        ]
+    },
+    {
+        "id": 72,
+        "nombre": "Altstatten",
+        "coords": [
+            1417,
+            232
+        ]
+    },
+    {
+        "id": 73,
+        "nombre": "Buchs",
+        "coords": [
+            1393,
+            338
+        ]
+    },
+    {
+        "id": 74,
+        "nombre": "Pfaffikon",
+        "coords": [
+            1150,
+            325
+        ]
+    },
+    {
+        "id": 75,
+        "nombre": "St Margrethen",
+        "coords": [
+            1445,
+            198
+        ]
+    },
+    {
+        "id": 76,
+        "nombre": "Zofingen",
+        "coords": [
+            862,
+            288
+        ]
+    },
+    {
+        "id": 77,
+        "nombre": "Lyss",
+        "coords": [
+            643,
+            393
+        ]
+    },
+    {
+        "id": 78,
+        "nombre": "Chaux",
+        "coords": [
+            476,
+            382
+        ]
+    },
+    {
+        "id": 79,
+        "nombre": "Hauts",
+        "coords": [
+            493,
+            406
+        ]
+    },
+    {
+        "id": 80,
+        "nombre": "Chambrelien",
+        "coords": [
+            474,
+            443
+        ]
+    },
+    {
+        "id": 81,
+        "nombre": "Ins",
+        "coords": [
+            571,
+            433
+        ]
+    },
+    {
+        "id": 82,
+        "nombre": "Kerzers",
+        "coords": [
+            602,
+            445
+        ]
+    },
+    {
+        "id": 83,
+        "nombre": "Bern-Brunnen",
+        "coords": [
+            667,
+            461
+        ]
+    },
+    {
+        "id": 84,
+        "nombre": "Burgdorf",
+        "coords": [
+            752,
+            403
+        ]
+    },
+    {
+        "id": 85,
+        "nombre": "Wynigen",
+        "coords": [
+            765,
+            380
+        ]
+    },
+    {
+        "id": 86,
+        "nombre": "Herzogenbuchsee",
+        "coords": [
+            780,
+            337
+        ]
+    },
+    {
+        "id": 87,
+        "nombre": "Langenthal",
+        "coords": [
+            807,
+            322
+        ]
+    },
+    {
+        "id": 88,
+        "nombre": "ZH-Altstetten",
+        "coords": [
+            1054,
+            234
+        ]
+    },
+    {
+        "id": 89,
+        "nombre": "Thalwil",
+        "coords": [
+            1076,
+            278
+        ]
+    },
+    {
+        "id": 90,
+        "nombre": "Wadenswil",
+        "coords": [
+            1085,
+            295
+        ]
+    },
+    {
+        "id": 91,
+        "nombre": "Ziegelbrucke",
+        "coords": [
+            1248,
+            358
+        ]
+    },
+    {
+        "id": 92,
+        "nombre": "Siebnen-Wangen",
+        "coords": [
+            1201,
+            337
+        ]
+    },
+    {
+        "id": 93,
+        "nombre": "Unterterzen",
+        "coords": [
+            1314,
+            369
+        ]
+    },
+    {
+        "id": 94,
+        "nombre": "Walenstadt",
+        "coords": [
+            1336,
+            363
+        ]
+    },
+    {
+        "id": 95,
+        "nombre": "Maienfeld",
+        "coords": [
+            1415,
+            421
+        ]
+    },
+    {
+        "id": 96,
+        "nombre": "Brugg",
+        "coords": [
+            952,
+            188
+        ]
+    },
+    {
+        "id": 97,
+        "nombre": "Baden",
+        "coords": [
+            987,
+            189
+        ]
+    },
+    {
+        "id": 98,
+        "nombre": "Sissach",
+        "coords": [
+            813,
+            197
+        ]
+    },
+    {
+        "id": 99,
+        "nombre": "Gelterkinden",
+        "coords": [
+            829,
+            196
+        ]
+    },
+    {
+        "id": 100,
+        "nombre": "Lenzburg",
+        "coords": [
+            940,
+            233
+        ]
+    },
+    {
+        "id": 101,
+        "nombre": "Schwyz",
+        "coords": [
+            1103,
+            415
+        ]
+    },
+    {
+        "id": 102,
+        "nombre": "Brunnen",
+        "coords": [
+            1094,
+            432
+        ]
+    },
+    {
+        "id": 103,
+        "nombre": "Castione",
+        "coords": [
+            1255,
+            820
+        ]
+    },
+    {
+        "id": 104,
+        "nombre": "Giubiasco",
+        "coords": [
+            1245,
+            839
+        ]
+    },
+    {
+        "id": 105,
+        "nombre": "Cadenazzo",
+        "coords": [
+            1217,
+            853
+        ]
+    },
+    {
+        "id": 106,
+        "nombre": "Tenero",
+        "coords": [
+            1189,
+            843
+        ]
+    },
+    {
+        "id": 107,
+        "nombre": "Locarno",
+        "coords": [
+            1168,
+            846
+        ]
+    },
+    {
+        "id": 108,
+        "nombre": "Konstanz",
+        "coords": [
+            1284,
+            93
+        ]
+    },
+    {
+        "id": 109,
+        "nombre": "Kreuzlingen",
+        "coords": [
+            1274,
+            95
+        ]
+    },
+    {
+        "id": 110,
+        "nombre": "Baar",
+        "coords": [
+            1064,
+            328
+        ]
+    },
+    {
+        "id": 111,
+        "nombre": "Rheinfelden",
+        "coords": [
+            810,
+            154
+        ]
+    },
+    {
+        "id": 112,
+        "nombre": "Stein",
+        "coords": [
+            854,
+            154
+        ]
+    },
+    {
+        "id": 113,
+        "nombre": "Frick",
+        "coords": [
+            885,
+            176
+        ]
+    },
+    {
+        "id": 114,
+        "nombre": "ZH-Dietikon",
+        "coords": [
+            1021,
+            225
         ]
     }
 ]

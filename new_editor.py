@@ -2035,7 +2035,7 @@ def abrir_ventana_lineas():
 	
 	top_lin = Toplevel()
 	
-	top_lin.geometry("400x600")
+	top_lin.geometry("400x900")
 	top_lin.title("Crear ruta")
 	top_lin.resizable(False, False)
 	

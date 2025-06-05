@@ -884,131 +884,6 @@
         ]
     },
     {
-        "id": 5,
-        "puntos": [
-            {
-                "coords": [
-                    476,
-                    382
-                ],
-                "parada": true,
-                "id_ciudad": 78
-            },
-            {
-                "coords": [
-                    488,
-                    388
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    495,
-                    399
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    493,
-                    406
-                ],
-                "parada": true,
-                "id_ciudad": 79
-            },
-            {
-                "coords": [
-                    474,
-                    443
-                ],
-                "parada": true,
-                "id_ciudad": 80
-            },
-            {
-                "coords": [
-                    513,
-                    433
-                ],
-                "parada": true,
-                "id_ciudad": 12
-            },
-            {
-                "coords": [
-                    529,
-                    422
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    542,
-                    426
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    571,
-                    433
-                ],
-                "parada": true,
-                "id_ciudad": 81
-            },
-            {
-                "coords": [
-                    587,
-                    435
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    602,
-                    445
-                ],
-                "parada": true,
-                "id_ciudad": 82
-            },
-            {
-                "coords": [
-                    619,
-                    465
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    654,
-                    463
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    667,
-                    461
-                ],
-                "parada": true,
-                "id_ciudad": 83
-            },
-            {
-                "coords": [
-                    688,
-                    458
-                ],
-                "parada": true,
-                "id_ciudad": 4
-            }
-        ]
-    },
-    {
         "id": 6,
         "puntos": [
             {
@@ -1675,8 +1550,8 @@
         "puntos": [
             {
                 "coords": [
-                    1404,
-                    416
+                    1383,
+                    402
                 ],
                 "parada": true,
                 "id_ciudad": 32
@@ -2377,195 +2252,6 @@
                 ],
                 "parada": true,
                 "id_ciudad": 18
-            }
-        ]
-    },
-    {
-        "id": 15,
-        "puntos": [
-            {
-                "coords": [
-                    1416,
-                    497
-                ],
-                "parada": true,
-                "id_ciudad": 30
-            },
-            {
-                "coords": [
-                    1420,
-                    468
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1423,
-                    452
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1423,
-                    435
-                ],
-                "parada": true,
-                "id_ciudad": 31
-            },
-            {
-                "coords": [
-                    1415,
-                    421
-                ],
-                "parada": true,
-                "id_ciudad": 95
-            },
-            {
-                "coords": [
-                    1404,
-                    416
-                ],
-                "parada": true,
-                "id_ciudad": 32
-            },
-            {
-                "coords": [
-                    1382,
-                    400
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1363,
-                    388
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1336,
-                    363
-                ],
-                "parada": true,
-                "id_ciudad": 94
-            },
-            {
-                "coords": [
-                    1323,
-                    367
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1314,
-                    369
-                ],
-                "parada": true,
-                "id_ciudad": 93
-            },
-            {
-                "coords": [
-                    1248,
-                    358
-                ],
-                "parada": true,
-                "id_ciudad": 91
-            },
-            {
-                "coords": [
-                    1226,
-                    342
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1201,
-                    337
-                ],
-                "parada": true,
-                "id_ciudad": 92
-            },
-            {
-                "coords": [
-                    1171,
-                    331
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1150,
-                    325
-                ],
-                "parada": true,
-                "id_ciudad": 74
-            },
-            {
-                "coords": [
-                    1137,
-                    324
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1126,
-                    325
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1114,
-                    313
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1085,
-                    295
-                ],
-                "parada": true,
-                "id_ciudad": 90
-            },
-            {
-                "coords": [
-                    1076,
-                    278
-                ],
-                "parada": true,
-                "id_ciudad": 89
-            },
-            {
-                "coords": [
-                    1064,
-                    247
-                ],
-                "parada": false,
-                "id_ciudad": null
-            },
-            {
-                "coords": [
-                    1066,
-                    240
-                ],
-                "parada": true,
-                "id_ciudad": 5
             }
         ]
     },
@@ -4403,6 +4089,878 @@
                 ],
                 "parada": true,
                 "id_ciudad": 18
+            }
+        ]
+    },
+    {
+        "id": 35,
+        "puntos": [
+            {
+                "coords": [
+                    1271,
+                    203
+                ],
+                "parada": true,
+                "id_ciudad": 22
+            },
+            {
+                "coords": [
+                    1258,
+                    198
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1243,
+                    203
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1238,
+                    194
+                ],
+                "parada": true,
+                "id_ciudad": 21
+            },
+            {
+                "coords": [
+                    1232,
+                    190
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1219,
+                    196
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1196,
+                    188
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1192,
+                    181
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1165,
+                    172
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1157,
+                    175
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1139,
+                    174
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1128,
+                    182
+                ],
+                "parada": true,
+                "id_ciudad": 18
+            }
+        ]
+    },
+    {
+        "id": 36,
+        "puntos": [
+            {
+                "coords": [
+                    617,
+                    362
+                ],
+                "parada": true,
+                "id_ciudad": 34
+            },
+            {
+                "coords": [
+                    621,
+                    369
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    631,
+                    368
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    646,
+                    381
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    643,
+                    393
+                ],
+                "parada": true,
+                "id_ciudad": 77
+            },
+            {
+                "coords": [
+                    650,
+                    397
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    655,
+                    405
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    695,
+                    421
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    700,
+                    439
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    688,
+                    458
+                ],
+                "parada": true,
+                "id_ciudad": 4
+            }
+        ]
+    },
+    {
+        "id": 37,
+        "puntos": [
+            {
+                "coords": [
+                    1445,
+                    198
+                ],
+                "parada": true,
+                "id_ciudad": 75
+            },
+            {
+                "coords": [
+                    1437,
+                    214
+                ],
+                "parada": true,
+                "id_ciudad": 115
+            },
+            {
+                "coords": [
+                    1417,
+                    232
+                ],
+                "parada": true,
+                "id_ciudad": 72
+            }
+        ]
+    },
+    {
+        "id": 38,
+        "puntos": [
+            {
+                "coords": [
+                    1416,
+                    497
+                ],
+                "parada": true,
+                "id_ciudad": 30
+            },
+            {
+                "coords": [
+                    1422,
+                    464
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1423,
+                    435
+                ],
+                "parada": true,
+                "id_ciudad": 31
+            },
+            {
+                "coords": [
+                    1419,
+                    425
+                ],
+                "parada": true,
+                "id_ciudad": 95
+            },
+            {
+                "coords": [
+                    1407,
+                    417
+                ],
+                "parada": true,
+                "id_ciudad": 116
+            },
+            {
+                "coords": [
+                    1394,
+                    408
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1383,
+                    402
+                ],
+                "parada": true,
+                "id_ciudad": 32
+            },
+            {
+                "coords": [
+                    1355,
+                    380
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1336,
+                    363
+                ],
+                "parada": true,
+                "id_ciudad": 94
+            },
+            {
+                "coords": [
+                    1324,
+                    367
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1314,
+                    369
+                ],
+                "parada": true,
+                "id_ciudad": 93
+            },
+            {
+                "coords": [
+                    1248,
+                    358
+                ],
+                "parada": true,
+                "id_ciudad": 91
+            },
+            {
+                "coords": [
+                    1229,
+                    343
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1201,
+                    337
+                ],
+                "parada": true,
+                "id_ciudad": 92
+            },
+            {
+                "coords": [
+                    1171,
+                    330
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1150,
+                    325
+                ],
+                "parada": true,
+                "id_ciudad": 74
+            },
+            {
+                "coords": [
+                    1130,
+                    328
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1120,
+                    318
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1102,
+                    303
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1085,
+                    295
+                ],
+                "parada": true,
+                "id_ciudad": 90
+            },
+            {
+                "coords": [
+                    1076,
+                    278
+                ],
+                "parada": true,
+                "id_ciudad": 89
+            },
+            {
+                "coords": [
+                    1063,
+                    249
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1066,
+                    240
+                ],
+                "parada": true,
+                "id_ciudad": 5
+            }
+        ]
+    },
+    {
+        "id": 15,
+        "puntos": [
+            {
+                "coords": [
+                    688,
+                    458
+                ],
+                "parada": true,
+                "id_ciudad": 4
+            },
+            {
+                "coords": [
+                    699,
+                    441
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    709,
+                    437
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    713,
+                    421
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    721,
+                    411
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    742,
+                    398
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    752,
+                    403
+                ],
+                "parada": true,
+                "id_ciudad": 84
+            },
+            {
+                "coords": [
+                    765,
+                    380
+                ],
+                "parada": true,
+                "id_ciudad": 85
+            },
+            {
+                "coords": [
+                    770,
+                    365
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    777,
+                    357
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    780,
+                    337
+                ],
+                "parada": true,
+                "id_ciudad": 86
+            },
+            {
+                "coords": [
+                    791,
+                    328
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    807,
+                    322
+                ],
+                "parada": true,
+                "id_ciudad": 87
+            },
+            {
+                "coords": [
+                    827,
+                    301
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    831,
+                    290
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    843,
+                    276
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    857,
+                    276
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    862,
+                    288
+                ],
+                "parada": true,
+                "id_ciudad": 76
+            },
+            {
+                "coords": [
+                    870,
+                    304
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    875,
+                    333
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    916,
+                    345
+                ],
+                "parada": true,
+                "id_ciudad": 71
+            }
+        ]
+    },
+    {
+        "id": 39,
+        "puntos": [
+            {
+                "coords": [
+                    813,
+                    197
+                ],
+                "parada": true,
+                "id_ciudad": 98
+            },
+            {
+                "coords": [
+                    829,
+                    196
+                ],
+                "parada": true,
+                "id_ciudad": 99
+            },
+            {
+                "coords": [
+                    841,
+                    205
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    856,
+                    254
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    875,
+                    250
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    889,
+                    238
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    899,
+                    234
+                ],
+                "parada": true,
+                "id_ciudad": 37
+            }
+        ]
+    },
+    {
+        "id": 40,
+        "puntos": [
+            {
+                "coords": [
+                    476,
+                    382
+                ],
+                "parada": true,
+                "id_ciudad": 78
+            },
+            {
+                "coords": [
+                    487,
+                    388
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    494,
+                    397
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    493,
+                    406
+                ],
+                "parada": true,
+                "id_ciudad": 79
+            },
+            {
+                "coords": [
+                    484,
+                    425
+                ],
+                "parada": true,
+                "id_ciudad": 117
+            },
+            {
+                "coords": [
+                    474,
+                    443
+                ],
+                "parada": true,
+                "id_ciudad": 80
+            },
+            {
+                "coords": [
+                    484,
+                    442
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    513,
+                    433
+                ],
+                "parada": true,
+                "id_ciudad": 12
+            },
+            {
+                "coords": [
+                    530,
+                    422
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    541,
+                    427
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    555,
+                    426
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    571,
+                    433
+                ],
+                "parada": true,
+                "id_ciudad": 81
+            },
+            {
+                "coords": [
+                    590,
+                    437
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    602,
+                    445
+                ],
+                "parada": true,
+                "id_ciudad": 82
+            },
+            {
+                "coords": [
+                    623,
+                    465
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    647,
+                    464
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    667,
+                    461
+                ],
+                "parada": true,
+                "id_ciudad": 83
+            },
+            {
+                "coords": [
+                    688,
+                    458
+                ],
+                "parada": true,
+                "id_ciudad": 4
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "puntos": [
+            {
+                "coords": [
+                    994,
+                    403
+                ],
+                "parada": true,
+                "id_ciudad": 51
+            },
+            {
+                "coords": [
+                    991,
+                    412
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    986,
+                    412
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    979,
+                    399
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    995,
+                    392
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1031,
+                    356
+                ],
+                "parada": true,
+                "id_ciudad": 118
+            },
+            {
+                "coords": [
+                    1038,
+                    355
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1037,
+                    344
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1044,
+                    336
+                ],
+                "parada": false,
+                "id_ciudad": null
+            },
+            {
+                "coords": [
+                    1059,
+                    343
+                ],
+                "parada": true,
+                "id_ciudad": 28
             }
         ]
     }

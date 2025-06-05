@@ -259,8 +259,8 @@
         "id": 32,
         "nombre": "Sargans",
         "coords": [
-            1404,
-            416
+            1383,
+            402
         ]
     },
     {
@@ -763,8 +763,8 @@
         "id": 95,
         "nombre": "Maienfeld",
         "coords": [
-            1415,
-            421
+            1419,
+            425
         ]
     },
     {
@@ -917,6 +917,38 @@
         "coords": [
             1021,
             225
+        ]
+    },
+    {
+        "id": 115,
+        "nombre": "Heerbrug",
+        "coords": [
+            1437,
+            214
+        ]
+    },
+    {
+        "id": 116,
+        "nombre": "Bad Ragaz",
+        "coords": [
+            1407,
+            417
+        ]
+    },
+    {
+        "id": 117,
+        "nombre": "Geneveys",
+        "coords": [
+            484,
+            425
+        ]
+    },
+    {
+        "id": 118,
+        "nombre": "Rotkreuz",
+        "coords": [
+            1031,
+            356
         ]
     }
 ]

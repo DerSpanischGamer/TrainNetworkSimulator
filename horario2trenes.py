@@ -52,7 +52,7 @@ class Linea:
 horariosF = "Horarios2025.xlsx" # Nombre del archivo en el que se leen los horarios
 
 ciudadesF = "Ciudades.json" # Nombre des archivo en el que se leen las ciudades para verificar
-lineasF = "LineasIC.json" # Nombre del archivo en el que se leen y guardan los trenes
+lineasF = "LineasIR.json" # Nombre del archivo en el que se leen y guardan los trenes
 
 ciudades = [] # ciudades como en el editor
 
@@ -317,7 +317,6 @@ def procesarTrenes():
 				llegada = int2hora(sheet.cell(row = row, column = col).value)
 				salida  = int2hora(sheet.cell(row = row, column = col + 1).value)
 				
-				
 				if (salida <= llegada):
 					print("Vuelta: Hora incorrecta para " + sheet.title + ", la hora de salida", salida, "es inferior o igual a la hora de llegada", llegada)
 					break
@@ -348,7 +347,7 @@ else:
 
 # --------- GUARDAR TRENES ---------
 
-with open("LineasIC_output.json", "w+") as f:
+with open("LineasIR_output.json", "w+") as f:
 	json.dump([l.__dict__ for l in lineas_escribir], f, indent = 4, default=lambda o: o.__dict__)
 	f.close()
 
